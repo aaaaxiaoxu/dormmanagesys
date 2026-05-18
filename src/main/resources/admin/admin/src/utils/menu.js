@@ -8,7 +8,7 @@ const menu = {
               {
                 appFrontIcon: "cuIcon-similar",
                 buttons: ["新增", "查看", "修改", "删除"],
-                menu: "学生",
+                menu: "学生档案",
                 menuJump: "列表",
                 tableName: "xuesheng",
               },
@@ -20,31 +20,31 @@ const menu = {
                 tableName: "suguan",
               },
             ],
-            menu: "人员管理",
+            menu: "人员档案",
           },
           {
             child: [
               {
                 appFrontIcon: "cuIcon-cardboard",
                 buttons: ["新增", "查看", "修改", "删除", "分配"],
-                menu: "宿舍信息",
+                menu: "宿舍资源",
                 menuJump: "列表",
                 tableName: "sushexinxi",
               },
             ],
-            menu: "宿舍信息管理",
+            menu: "宿舍资源",
           },
           {
             child: [
               {
                 appFrontIcon: "cuIcon-rank",
                 buttons: ["查看", "新增", "修改", "删除", "水电费", "考勤"],
-                menu: "宿舍分配",
+                menu: "入住分配",
                 menuJump: "列表",
                 tableName: "sushefenpei",
               },
             ],
-            menu: "宿舍档案",
+            menu: "入住管理",
           },
           {
             child: [
@@ -55,10 +55,15 @@ const menu = {
                 menuJump: "列表",
                 tableName: "shuidianfei",
               },
+            ],
+            menu: "费用管理",
+          },
+          {
+            child: [
               {
                 appFrontIcon: "cuIcon-attentionfavor",
                 buttons: ["查看", "新增", "修改", "删除"],
-                menu: "出入宿舍",
+                menu: "门禁出入",
                 menuJump: "列表",
                 tableName: "churusushe",
               },
@@ -73,28 +78,28 @@ const menu = {
               {
                 appFrontIcon: "cuIcon-brand",
                 buttons: ["查看", "新增", "修改", "删除", "审核"],
-                menu: "宿舍报修",
+                menu: "报修工单",
                 menuJump: "列表",
                 tableName: "weixiuxinxi",
               },
               {
                 appFrontIcon: "cuIcon-brand",
                 buttons: ["查看", "修改", "删除", "审核"],
-                menu: "请假信息",
+                menu: "请假审批",
                 menuJump: "列表",
                 tableName: "qingjia",
               },
               {
                 appFrontIcon: "cuIcon-album",
                 buttons: ["查看", "新增", "修改", "删除", "审核"],
-                menu: "宿舍卫生",
+                menu: "卫生检查",
                 menuJump: "列表",
                 tableName: "weishengxinxi",
               },
               {
                 appFrontIcon: "cuIcon-send",
                 buttons: ["查看", "新增", "修改", "删除"],
-                menu: "考勤信息",
+                menu: "考勤统计",
                 menuJump: "列表",
                 tableName: "kaoqinxinxi",
               },
@@ -106,7 +111,7 @@ const menu = {
               {
                 appFrontIcon: "cuIcon-group",
                 buttons: ["新增", "查看", "修改", "删除"],
-                menu: "论坛交流",
+                menu: "宿舍论坛",
                 tableName: "forum",
               },
               {
@@ -122,7 +127,7 @@ const menu = {
                 tableName: "news",
               },
             ],
-            menu: "互动公告",
+            menu: "互动服务",
           },
         ],
         frontMenu: [],
@@ -139,32 +144,32 @@ const menu = {
             child: [
               {
                 appFrontIcon: "cuIcon-similar",
-                buttons: ["新增", "查看", "修改", "删除"],
-                menu: "学生",
+                buttons: ["查看"],
+                menu: "学生档案",
                 menuJump: "列表",
                 tableName: "xuesheng",
               },
               {
                 appFrontIcon: "cuIcon-cardboard",
-                buttons: ["新增", "查看", "修改", "删除", "分配"],
-                menu: "宿舍信息",
+                buttons: ["查看", "分配"],
+                menu: "宿舍资源",
                 menuJump: "列表",
                 tableName: "sushexinxi",
               },
             ],
-            menu: "宿舍信息管理",
+            menu: "基础查询",
           },
           {
             child: [
               {
                 appFrontIcon: "cuIcon-rank",
                 buttons: ["查看", "新增", "修改", "删除", "水电费", "考勤"],
-                menu: "宿舍分配",
+                menu: "入住分配",
                 menuJump: "列表",
                 tableName: "sushefenpei",
               },
             ],
-            menu: "宿舍基础",
+            menu: "入住管理",
           },
           {
             child: [
@@ -178,35 +183,35 @@ const menu = {
               {
                 appFrontIcon: "cuIcon-attentionfavor",
                 buttons: ["查看", "新增", "修改", "删除"],
-                menu: "出入宿舍",
+                menu: "门禁出入",
                 menuJump: "列表",
                 tableName: "churusushe",
               },
               {
                 appFrontIcon: "cuIcon-brand",
                 buttons: ["查看", "新增", "修改", "删除", "审核"],
-                menu: "宿舍报修",
+                menu: "报修工单",
                 menuJump: "列表",
                 tableName: "weixiuxinxi",
               },
               {
                 appFrontIcon: "cuIcon-brand",
                 buttons: ["查看", "修改", "删除", "审核"],
-                menu: "请假信息",
+                menu: "请假审批",
                 menuJump: "列表",
                 tableName: "qingjia",
               },
               {
                 appFrontIcon: "cuIcon-album",
                 buttons: ["查看", "新增", "修改", "删除", "审核"],
-                menu: "宿舍卫生",
+                menu: "卫生检查",
                 menuJump: "列表",
                 tableName: "weishengxinxi",
               },
               {
                 appFrontIcon: "cuIcon-send",
                 buttons: ["查看", "新增", "修改", "删除"],
-                menu: "考勤信息",
+                menu: "考勤统计",
                 menuJump: "列表",
                 tableName: "kaoqinxinxi",
               },
@@ -218,7 +223,7 @@ const menu = {
               {
                 appFrontIcon: "cuIcon-group",
                 buttons: ["新增", "查看", "修改", "删除"],
-                menu: "论坛交流",
+                menu: "宿舍论坛",
                 tableName: "forum",
               },
               {
@@ -234,7 +239,7 @@ const menu = {
                 tableName: "news",
               },
             ],
-            menu: "互动公告",
+            menu: "互动服务",
           },
         ],
         frontMenu: [],
@@ -251,8 +256,8 @@ const menu = {
             child: [
               {
                 appFrontIcon: "cuIcon-rank",
-                buttons: ["查看",  "出入", "维修", "卫生"],
-                menu: "宿舍分配",
+                buttons: ["查看", "维修", "卫生"],
+                menu: "我的宿舍",
                 menuJump: "列表",
                 tableName: "sushefenpei",
               },
@@ -270,22 +275,22 @@ const menu = {
             child: [
               {
                 appFrontIcon: "cuIcon-attentionfavor",
-                buttons: ["查看", "新增"],
-                menu: "出入宿舍",
+                buttons: ["查看"],
+                menu: "我的门禁记录",
                 menuJump: "列表",
                 tableName: "churusushe",
               },
               {
                 appFrontIcon: "cuIcon-brand",
                 buttons: ["查看", "新增", "删除"],
-                menu: "宿舍报修",
+                menu: "报修申请",
                 menuJump: "列表",
                 tableName: "weixiuxinxi",
               },
               {
                 appFrontIcon: "cuIcon-brand",
                 buttons: ["查看", "新增"],
-                menu: "请假信息",
+                menu: "请假申请",
                 menuJump: "列表",
                 tableName: "qingjia",
               },
@@ -303,14 +308,14 @@ const menu = {
               {
                 appFrontIcon: "cuIcon-album",
                 buttons: ["查看"],
-                menu: "宿舍卫生",
+                menu: "卫生记录",
                 menuJump: "列表",
                 tableName: "weishengxinxi",
               },
               {
                 appFrontIcon: "cuIcon-send",
                 buttons: ["查看"],
-                menu: "考勤信息",
+                menu: "考勤记录",
                 menuJump: "列表",
                 tableName: "kaoqinxinxi",
               },
@@ -322,7 +327,7 @@ const menu = {
               {
                 appFrontIcon: "cuIcon-group",
                 buttons: ["新增", "查看", "修改", "删除"],
-                menu: "论坛交流",
+                menu: "宿舍论坛",
                 tableName: "forum",
               },
               {
@@ -332,7 +337,7 @@ const menu = {
                 tableName: "messages",
               },
             ],
-            menu: "互动公告",
+            menu: "互动服务",
           },
         ],
         frontMenu: [],

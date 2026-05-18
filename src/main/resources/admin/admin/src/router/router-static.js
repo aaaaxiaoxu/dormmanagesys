@@ -73,7 +73,7 @@ const routes = [
       },
       {
         path: "/xuesheng",
-        name: "学生",
+        name: "学生档案",
         component: xuesheng,
       },
       {
@@ -88,27 +88,27 @@ const routes = [
       },
       {
         path: "/weishengxinxi",
-        name: "宿舍卫生",
+        name: "卫生检查",
         component: weishengxinxi,
       },
       {
         path: "/weixiuxinxi",
-        name: "宿舍报修",
+        name: "报修工单",
         component: weixiuxinxi,
       },
       {
         path: "/qingjia",
-        name: "宿舍报修",
+        name: "请假申请",
         component: qingjia,
       },
       {
         path: "/churusushe",
-        name: "出入宿舍",
+        name: "门禁出入",
         component: churusushe,
       },
       {
         path: "/forum",
-        name: "交流论坛",
+        name: "宿舍论坛",
         component: forum,
       },
       {
@@ -123,22 +123,22 @@ const routes = [
       },
       {
         path: "/sushefenpei",
-        name: "宿舍分配",
+        name: "入住分配",
         component: sushefenpei,
       },
       {
         path: "/sushexinxi",
-        name: "宿舍信息",
+        name: "宿舍资源",
         component: sushexinxi,
       },
       {
         path: "/messages",
-        name: "留言板",
+        name: "AI客服",
         component: messages,
       },
       {
         path: "/kaoqinxinxi",
-        name: "考勤信息",
+        name: "考勤统计",
         component: kaoqinxinxi,
       },
       {

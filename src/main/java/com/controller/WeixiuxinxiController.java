@@ -145,6 +145,7 @@ public class WeixiuxinxiController {
         if(StringUtils.isNotBlank(validateMsg)) {
             return R.error(validateMsg);
         }
+        fillDefaultRepairStatus(weixiuxinxi);
         weixiuxinxiService.insert(weixiuxinxi);
         return R.ok();
     }
@@ -161,6 +162,7 @@ public class WeixiuxinxiController {
         if(StringUtils.isNotBlank(validateMsg)) {
             return R.error(validateMsg);
         }
+        fillDefaultRepairStatus(weixiuxinxi);
         weixiuxinxiService.insert(weixiuxinxi);
         return R.ok();
     }
@@ -179,6 +181,7 @@ public class WeixiuxinxiController {
         if(StringUtils.isNotBlank(validateMsg)) {
             return R.error(validateMsg);
         }
+        fillDefaultRepairStatus(weixiuxinxi);
         weixiuxinxiService.updateById(weixiuxinxi);//全部更新
         return R.ok();
     }
@@ -245,6 +248,12 @@ public class WeixiuxinxiController {
         EntityWrapper<SushefenpeiEntity> wrapper = new EntityWrapper<SushefenpeiEntity>();
         wrapper.eq("xueshengxuehao", username);
         return sushefenpeiService.selectOne(wrapper);
+    }
+
+    private void fillDefaultRepairStatus(WeixiuxinxiEntity weixiuxinxi) {
+        if(weixiuxinxi != null && StringUtils.isBlank(weixiuxinxi.getSfsh())) {
+            weixiuxinxi.setSfsh("待处理");
+        }
     }
 
     private String validateRepairInfo(WeixiuxinxiEntity weixiuxinxi) {

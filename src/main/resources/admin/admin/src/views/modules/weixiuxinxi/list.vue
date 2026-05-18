@@ -2,27 +2,39 @@
 	<div class="main-content" :style='{"padding":"30px 0 0 0"}'>
 		<!-- 列表页 -->
 		<template v-if="showFlag">
+			<div class="repair-tip">
+				<i class="el-icon-s-tools"></i>
+				<span>报修按工单流转：学生提交后进入待处理，宿管可更新为维修中、已完成或退回，并填写处理备注。</span>
+			</div>
 			<el-form class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
 				<el-row :style='{"display":"block"}' >
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">标题</label>
 						<el-input v-model="searchForm.biaoti" placeholder="标题" clearable></el-input>
 					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">楼栋</label>
+						<el-input v-model="searchForm.susheloudong" placeholder="宿舍楼栋" clearable></el-input>
+					</div>
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select">
-						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">是否通过</label>
-						<el-select  @change="sfshChange" clearable v-model="searchForm.sfsh" placeholder="是否通过">
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">工单状态</label>
+						<el-select  @change="sfshChange" clearable v-model="searchForm.sfsh" placeholder="工单状态">
 							<el-option v-for="(item,index) in sfshOptions" v-bind:key="index" :label="item" :value="item"></el-option>
 						</el-select>
+					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="date">
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">报修日期</label>
+						<el-date-picker value-format="yyyy-MM-dd" v-model="searchForm.weixiuriqi" type="date" placeholder="报修日期" clearable></el-date-picker>
 					</div>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 20px","outline":"none","margin":"0px 0 5px 0","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' type="success" @click="search()">查询</el-button>
 				</el-row>
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
-					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','新增')" type="success" @click="addOrUpdateHandler()">新增</el-button>
+					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">提交报修</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
 
-					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','审核')" :disabled="dataListSelections.length <= 0" type="danger" @click="shBatchDialog()">批量审核</el-button>
+					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','审核')" :disabled="dataListSelections.length <= 0" type="danger" @click="shBatchDialog()">批量更新状态</el-button>
 
 
 				</el-row>
@@ -94,23 +106,21 @@
 							{{scope.row.weixiuriqi}}
 						</template>
 					</el-table-column>
-					<el-table-column :resizable='true' :sortable='true' prop="shhf" label="审核回复"></el-table-column>
-					<el-table-column :resizable='true' :sortable='true' prop="sfsh" label="审核状态">
+					<el-table-column :resizable='true' :sortable='true' prop="shhf" label="处理备注"></el-table-column>
+					<el-table-column :resizable='true' :sortable='true' prop="sfsh" label="工单状态">
 						<template slot-scope="scope">
-							<span style="margin-right:10px" v-if="scope.row.sfsh=='是'">通过</span>
-							<span style="margin-right:10px" v-if="scope.row.sfsh=='否'">未通过</span>
-							<span style="margin-right:10px" v-if="scope.row.sfsh=='待审核'">待审核</span>
+							<el-tag :type="repairStatusType(scope.row.sfsh)" size="mini">{{repairStatusLabel(scope.row.sfsh)}}</el-tag>
 						</template>
 					</el-table-column>
-					<el-table-column :resizable='true' :sortable='true' v-if="isAuth('weixiuxinxi','审核')" prop="sfsh" label="审核">
+					<el-table-column :resizable='true' :sortable='true' v-if="isAuth('weixiuxinxi','审核')" prop="sfsh" label="处理">
 						<template slot-scope="scope">
-							<el-button  type="text" size="small" @click="shDialog(scope.row)">审核</el-button>
+							<el-button  type="text" size="small" @click="shDialog(scope.row)">更新状态</el-button>
 						</template>
 					</el-table-column>
 					<el-table-column width="300" label="操作">
 						<template slot-scope="scope">
 							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('weixiuxinxi','查看')" type="success" size="mini" @click="addOrUpdateHandler(scope.row.id,'info')">详情</el-button>
-							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('weixiuxinxi','修改')" type="primary" size="mini" @click="addOrUpdateHandler(scope.row.id)">修改</el-button>
+							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('weixiuxinxi','修改')" type="primary" size="mini" @click="addOrUpdateHandler(scope.row.id)">修改工单</el-button>
 
 
 
@@ -141,16 +151,14 @@
 		<add-or-update v-if="addOrUpdateFlag" :parent="this" ref="addOrUpdate"></add-or-update>
 
 
-		<el-dialog title="审核" :visible.sync="sfshVisiable" width="50%">
+		<el-dialog title="处理工单" :visible.sync="sfshVisiable" width="50%">
 			<el-form ref="form" :model="form" label-width="80px">
-				<el-form-item label="审核状态">
-					<el-select v-model="shForm.sfsh" placeholder="审核状态">
-						<el-option label="通过" value="是"></el-option>
-						<el-option label="不通过" value="否"></el-option>
-						<el-option label="待审核" value="待审核"></el-option>
+				<el-form-item label="工单状态">
+					<el-select v-model="shForm.sfsh" placeholder="工单状态">
+						<el-option v-for="item in sfshOptions" :key="item" :label="item" :value="item"></el-option>
 					</el-select>
 				</el-form-item>
-				<el-form-item label="内容">
+				<el-form-item label="处理备注">
 					<el-input type="textarea" :rows="8" v-model="shForm.shhf"></el-input>
 				</el-form-item>
 			</el-form>
@@ -159,16 +167,14 @@
 				<el-button type="primary" @click="shHandler">确 定</el-button>
 			</span>
 		</el-dialog>
-		<el-dialog title="批量审核" :visible.sync="sfshBatchVisiable" width="50%">
+		<el-dialog title="批量更新工单状态" :visible.sync="sfshBatchVisiable" width="50%">
 			<el-form ref="form" :model="form" label-width="80px">
-				<el-form-item label="审核状态">
-					<el-select v-model="shBatchForm.sfsh" placeholder="审核状态">
-						<el-option label="通过" value="是"></el-option>
-						<el-option label="不通过" value="否"></el-option>
-						<el-option label="待审核" value="待审核"></el-option>
+				<el-form-item label="工单状态">
+					<el-select v-model="shBatchForm.sfsh" placeholder="工单状态">
+						<el-option v-for="item in sfshOptions" :key="item" :label="item" :value="item"></el-option>
 					</el-select>
 				</el-form-item>
-				<el-form-item label="内容">
+				<el-form-item label="处理备注">
 					<el-input type="textarea" :rows="8" v-model="shBatchForm.shhf"></el-input>
 				</el-form-item>
 			</el-form>
@@ -266,7 +272,7 @@ export default {
 
 
     init () {
-        this.sfshOptions = "是,否,待审核".split(',');
+        this.sfshOptions = "待处理,维修中,已完成,退回".split(',');
     },
     search() {
       this.pageIndex = 1;
@@ -285,38 +291,15 @@ export default {
            if(this.searchForm.biaoti!='' && this.searchForm.biaoti!=undefined){
             params['biaoti'] = '%' + this.searchForm.biaoti + '%'
           }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
+          if(this.searchForm.susheloudong!='' && this.searchForm.susheloudong!=undefined){
+            params['susheloudong'] = '%' + this.searchForm.susheloudong + '%'
           }
           if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
             params['sfsh'] = this.searchForm.sfsh
           }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
+          if(this.searchForm.weixiuriqi!='' && this.searchForm.weixiuriqi!=undefined){
+            params['weixiuriqi_start'] = this.searchForm.weixiuriqi
+            params['weixiuriqi_end'] = this.searchForm.weixiuriqi
           }
       this.$http({
         url: "weixiuxinxi/page",
@@ -347,6 +330,27 @@ export default {
     // 多选
     selectionChangeHandler(val) {
       this.dataListSelections = val;
+    },
+    repairStatusLabel(status) {
+      const map = {
+        '待审核': '待处理',
+        '是': '已完成',
+        '否': '退回'
+      };
+      return map[status] || status || '待处理';
+    },
+    repairStatusType(status) {
+      const label = this.repairStatusLabel(status);
+      if (label === '已完成') {
+        return 'success';
+      }
+      if (label === '维修中') {
+        return 'primary';
+      }
+      if (label === '退回') {
+        return 'danger';
+      }
+      return 'warning';
     },
     // 添加/修改
     addOrUpdateHandler(id,type) {
@@ -486,8 +490,27 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-	
-	.center-form-pv {
+	.repair-tip {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0 20px 20px;
+		padding: 12px 16px;
+		border: 1px solid rgba(101, 178, 121, 0.26);
+		border-radius: 12px;
+		background: linear-gradient(135deg, rgba(248, 252, 236, 0.98), rgba(232, 248, 241, 0.94));
+		color: #3f6349;
+		font-size: 14px;
+		line-height: 1.6;
+		box-shadow: 0 8px 24px rgba(82, 139, 92, 0.08);
+	}
+
+	.repair-tip i {
+		color: #58a873;
+		font-size: 18px;
+	}
+
+		.center-form-pv {
 	  .el-date-editor.el-input {
 	    width: auto;
 	  }

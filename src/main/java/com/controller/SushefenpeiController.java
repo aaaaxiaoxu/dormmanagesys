@@ -10,7 +10,9 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 import com.utils.ValidatorUtils;
@@ -231,6 +233,92 @@ public class SushefenpeiController {
         }
         return R.ok();
     }
+
+    /**
+     * 一键分配宿舍
+     */
+    @RequestMapping("/autoAssign")
+    @Transactional
+    public R autoAssign(@RequestBody Map<String, Object> params, HttpServletRequest request){
+        boolean previewOnly = getBooleanParam(params, "previewOnly");
+        List<XueshengEntity> students = selectAssignableStudents(params);
+        List<SushexinxiEntity> dorms = selectAvailableDorms(params);
+        List<Map<String, Object>> successList = new ArrayList<Map<String, Object>>();
+        List<Map<String, Object>> failedList = new ArrayList<Map<String, Object>>();
+
+        if(students == null || students.isEmpty()) {
+            return R.ok("没有符合条件的未分配学生")
+                    .put("previewOnly", previewOnly)
+                    .put("successCount", 0)
+                    .put("failedCount", 0)
+                    .put("successList", successList)
+                    .put("failedList", failedList);
+        }
+        if(dorms == null || dorms.isEmpty()) {
+            for(XueshengEntity student : students) {
+                failedList.add(buildAutoAssignFailure(student, "没有符合条件的宿舍资源"));
+            }
+            return R.ok("没有符合条件的宿舍资源")
+                    .put("previewOnly", previewOnly)
+                    .put("successCount", 0)
+                    .put("failedCount", failedList.size())
+                    .put("successList", successList)
+                    .put("failedList", failedList);
+        }
+
+        Map<Long, Set<String>> occupiedBedMap = buildOccupiedBedMap(dorms);
+        long seed = new Date().getTime();
+        int sequence = 0;
+        for(XueshengEntity student : students) {
+            if(isStudentAllocated(student.getXueshengxuehao())) {
+                failedList.add(buildAutoAssignFailure(student, "该学生已分配宿舍"));
+                continue;
+            }
+            SushexinxiEntity matchedDorm = null;
+            String matchedBed = null;
+            for(SushexinxiEntity dorm : dorms) {
+                if(!isGenderMatched(student, dorm)) {
+                    continue;
+                }
+                matchedBed = findFirstAvailableBed(dorm, occupiedBedMap.get(dorm.getId()));
+                if(StringUtils.isNotBlank(matchedBed)) {
+                    matchedDorm = dorm;
+                    break;
+                }
+            }
+
+            if(matchedDorm == null || StringUtils.isBlank(matchedBed)) {
+                failedList.add(buildAutoAssignFailure(student, "没有符合性别和空床位规则的宿舍"));
+                continue;
+            }
+
+            SushefenpeiEntity allocation = buildAutoAllocation(student, matchedDorm, matchedBed, seed + sequence++);
+            String validateMsg = validateAllocation(allocation);
+            if(StringUtils.isNotBlank(validateMsg)) {
+                failedList.add(buildAutoAssignFailure(student, validateMsg));
+                continue;
+            }
+
+            if(!previewOnly) {
+                sushefenpeiService.insert(allocation);
+                syncDormStatus(allocation);
+            }
+            Set<String> occupiedBeds = occupiedBedMap.get(matchedDorm.getId());
+            if(occupiedBeds == null) {
+                occupiedBeds = new HashSet<String>();
+                occupiedBedMap.put(matchedDorm.getId(), occupiedBeds);
+            }
+            occupiedBeds.add(matchedBed);
+            successList.add(buildAutoAssignSuccess(allocation));
+        }
+
+        return R.ok(previewOnly ? "一键分配预览完成" : "一键分配完成")
+                .put("previewOnly", previewOnly)
+                .put("successCount", successList.size())
+                .put("failedCount", failedList.size())
+                .put("successList", successList)
+                .put("failedList", failedList);
+    }
     
 	
 
@@ -246,6 +334,146 @@ public class SushefenpeiController {
         EntityWrapper<SushefenpeiEntity> currentDormWrapper = new EntityWrapper<SushefenpeiEntity>();
         currentDormWrapper.eq("xueshengxuehao", username);
         return sushefenpeiService.selectOne(currentDormWrapper);
+    }
+
+    private List<XueshengEntity> selectAssignableStudents(Map<String, Object> params) {
+        EntityWrapper<XueshengEntity> wrapper = new EntityWrapper<XueshengEntity>();
+        addEqCondition(wrapper, "banji", getStringParam(params, "banji"));
+        addEqCondition(wrapper, "zhuanye", getStringParam(params, "zhuanye"));
+        addEqCondition(wrapper, "xingbie", getStringParam(params, "xingbie"));
+        addLikeCondition(wrapper, "xueshengxuehao", getStringParam(params, "xueshengxuehao"));
+        addLikeCondition(wrapper, "xueshengxingming", getStringParam(params, "xueshengxingming"));
+        return xueshengService.selectList(wrapper);
+    }
+
+    private List<SushexinxiEntity> selectAvailableDorms(Map<String, Object> params) {
+        EntityWrapper<SushexinxiEntity> wrapper = new EntityWrapper<SushexinxiEntity>();
+        addEqCondition(wrapper, "susheloudong", getStringParam(params, "susheloudong"));
+        addEqCondition(wrapper, "susheleixing", getStringParam(params, "susheleixing"));
+        addLikeCondition(wrapper, "sushemingcheng", getStringParam(params, "sushemingcheng"));
+        addLikeCondition(wrapper, "fangjianhao", getStringParam(params, "fangjianhao"));
+        wrapper.orderBy("susheloudong", true);
+        wrapper.orderBy("fangjianhao", true);
+        return sushexinxiService.selectList(wrapper);
+    }
+
+    private void addEqCondition(EntityWrapper<?> wrapper, String column, String value) {
+        if(StringUtils.isNotBlank(value)) {
+            wrapper.eq(column, value);
+        }
+    }
+
+    private void addLikeCondition(EntityWrapper<?> wrapper, String column, String value) {
+        if(StringUtils.isNotBlank(value)) {
+            wrapper.like(column, value);
+        }
+    }
+
+    private boolean isStudentAllocated(String studentNo) {
+        if(StringUtils.isBlank(studentNo)) {
+            return false;
+        }
+        EntityWrapper<SushefenpeiEntity> wrapper = new EntityWrapper<SushefenpeiEntity>();
+        wrapper.eq("xueshengxuehao", studentNo);
+        return sushefenpeiService.selectCount(wrapper) > 0;
+    }
+
+    private Map<Long, Set<String>> buildOccupiedBedMap(List<SushexinxiEntity> dorms) {
+        Map<Long, Set<String>> occupiedBedMap = new HashMap<Long, Set<String>>();
+        for(SushexinxiEntity dorm : dorms) {
+            Set<String> beds = new HashSet<String>();
+            EntityWrapper<SushefenpeiEntity> wrapper = new EntityWrapper<SushefenpeiEntity>();
+            wrapper.eq("sushemingcheng", dorm.getSushemingcheng());
+            wrapper.eq("susheloudong", dorm.getSusheloudong());
+            wrapper.eq("fangjianhao", dorm.getFangjianhao());
+            List<SushefenpeiEntity> allocations = sushefenpeiService.selectList(wrapper);
+            if(allocations != null) {
+                for(SushefenpeiEntity allocation : allocations) {
+                    if(StringUtils.isNotBlank(allocation.getChuangweihao())) {
+                        beds.add(allocation.getChuangweihao());
+                    }
+                }
+            }
+            occupiedBedMap.put(dorm.getId(), beds);
+        }
+        return occupiedBedMap;
+    }
+
+    private boolean isGenderMatched(XueshengEntity student, SushexinxiEntity dorm) {
+        String studentGender = normalizeStudentGender(student.getXingbie());
+        String dormGender = normalizeDormGender(dorm.getSusheleixing());
+        return StringUtils.isBlank(studentGender)
+                || StringUtils.isBlank(dormGender)
+                || StringUtils.equals(studentGender, dormGender);
+    }
+
+    private String findFirstAvailableBed(SushexinxiEntity dorm, Set<String> occupiedBeds) {
+        int capacity = parseCapacity(dorm.getKezhurenshu());
+        if(capacity <= 0) {
+            return null;
+        }
+        Set<String> beds = occupiedBeds == null ? new HashSet<String>() : occupiedBeds;
+        for(int i = 1; i <= capacity; i++) {
+            String bedNo = String.valueOf(i);
+            if(!beds.contains(bedNo)) {
+                return bedNo;
+            }
+        }
+        return null;
+    }
+
+    private int parseCapacity(String capacityValue) {
+        try {
+            return Integer.parseInt(StringUtils.defaultIfBlank(capacityValue, "0"));
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private SushefenpeiEntity buildAutoAllocation(XueshengEntity student, SushexinxiEntity dorm, String bedNo, Long id) {
+        SushefenpeiEntity allocation = new SushefenpeiEntity();
+        allocation.setId(id);
+        allocation.setSushemingcheng(dorm.getSushemingcheng());
+        allocation.setSusheleixing(dorm.getSusheleixing());
+        allocation.setSusheloudong(dorm.getSusheloudong());
+        allocation.setFangjianhao(dorm.getFangjianhao());
+        allocation.setXueshengxuehao(student.getXueshengxuehao());
+        allocation.setXueshengxingming(student.getXueshengxingming());
+        allocation.setChuangweihao(bedNo);
+        allocation.setFenpeiriqi(new Date());
+        allocation.setBeizhu("系统一键分配");
+        return allocation;
+    }
+
+    private Map<String, Object> buildAutoAssignSuccess(SushefenpeiEntity allocation) {
+        Map<String, Object> item = new HashMap<String, Object>();
+        item.put("xueshengxuehao", allocation.getXueshengxuehao());
+        item.put("xueshengxingming", allocation.getXueshengxingming());
+        item.put("sushemingcheng", allocation.getSushemingcheng());
+        item.put("susheloudong", allocation.getSusheloudong());
+        item.put("fangjianhao", allocation.getFangjianhao());
+        item.put("chuangweihao", allocation.getChuangweihao());
+        return item;
+    }
+
+    private Map<String, Object> buildAutoAssignFailure(XueshengEntity student, String reason) {
+        Map<String, Object> item = new HashMap<String, Object>();
+        item.put("xueshengxuehao", student == null ? "" : student.getXueshengxuehao());
+        item.put("xueshengxingming", student == null ? "" : student.getXueshengxingming());
+        item.put("reason", reason);
+        return item;
+    }
+
+    private String getStringParam(Map<String, Object> params, String key) {
+        if(params == null || params.get(key) == null) {
+            return null;
+        }
+        return String.valueOf(params.get(key)).trim();
+    }
+
+    private boolean getBooleanParam(Map<String, Object> params, String key) {
+        String value = getStringParam(params, key);
+        return "true".equalsIgnoreCase(value) || "1".equals(value) || "是".equals(value);
     }
 
     private String validateAllocation(SushefenpeiEntity sushefenpei) {

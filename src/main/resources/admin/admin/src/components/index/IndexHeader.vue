@@ -76,10 +76,10 @@
 			padding-left: 0 !important;
 			float: none !important;
 			line-height: 1.2 !important;
-			font-size: 22px !important;
+			font-size: 23px !important;
 			font-weight: 700;
-			letter-spacing: 0.02em;
-			color: #0f172a !important;
+			letter-spacing: 0;
+			color: #263b2e !important;
 		}
 
 		.right {
@@ -94,23 +94,25 @@
 		.logout {
 			margin: 0 !important;
 			line-height: 40px !important;
-			border-radius: 12px;
+			border-radius: 10px;
 			padding: 0 14px;
 			transition: all 0.2s ease;
+			font-size: 15px;
+			font-weight: 600;
 		}
 
 		.nickname {
-			color: #334155 !important;
-			background: rgba(226, 232, 240, 0.72);
+			color: #438f55 !important;
+			background: rgba(223, 245, 225, 0.9);
 		}
 
 		.logout {
-			color: #516146 !important;
-			background: rgba(229, 235, 221, 0.92);
+			color: #2f7c43 !important;
+			background: rgba(255, 243, 196, 0.9);
 		}
 
 		.logout:hover {
-			background: rgba(214, 224, 201, 0.98);
+			background: rgba(255, 235, 151, 0.98);
 		}
 	}
 </style>

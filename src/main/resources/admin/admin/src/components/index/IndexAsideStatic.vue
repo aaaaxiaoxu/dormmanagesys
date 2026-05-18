@@ -152,7 +152,9 @@ export default {
 <style lang="scss" scoped>
 	.menu-preview {
 	  height: 100%;
-	  background: linear-gradient(180deg, #0f172a 0%, #172033 100%);
+	  background:
+		radial-gradient(circle at 0 0, rgba(255, 243, 196, 0.75), transparent 34%),
+		linear-gradient(180deg, #f8fff4 0%, #e6f6dd 100%);
 
 	  .el-scrollbar {
 	    height: 100%;
@@ -162,7 +164,13 @@ export default {
 	    }
 
 		& ::v-deep .el-scrollbar__thumb {
-			background: rgba(148, 163, 184, 0.28);
+			background: rgba(111, 189, 117, 0.32);
+		}
+
+		.el-menu-vertical-demo span,
+		.el-menu-vertical-demo ::v-deep .el-menu-item {
+			font-size: 15px !important;
+			font-weight: 600;
 		}
 		
 				// 竖向
@@ -173,47 +181,47 @@ export default {
 		}
 		
 		.el-menu-vertical-demo>.el-menu-item {
-				  				  cursor: pointer;
-				  				  border-radius: 14px;
-				  				  padding: 0 16px;
-				  				  margin: 10px 0 0;
-				  				  color: rgba(226, 232, 240, 0.84);
-				  				  white-space: nowrap;
-				  				  background: rgba(255, 255, 255, 0.04);
-				  				  position: relative;
-				  				  border: 1px solid rgba(148, 163, 184, 0.08);
-				  				  height: 46px;
-				  				  line-height: 46px;
-				  		}
+			cursor: pointer;
+			border-radius: 12px;
+			padding: 0 16px;
+			margin: 10px 0 0;
+			color: #43634b;
+			white-space: nowrap;
+			background: rgba(255, 255, 255, 0.62);
+			position: relative;
+			border: 1px solid rgba(207, 228, 200, 0.85);
+			height: 46px;
+			line-height: 46px;
+		}
 		
 		.el-menu-vertical-demo>.el-menu-item:hover {
-						color: #fff;
-						background: rgba(111, 127, 95, 0.26);
+						color: #2f7c43;
+						background: #dff5e1;
 					}
 		
 		.el-menu-vertical-demo .el-submenu  ::v-deep .el-submenu__title {
 						cursor: pointer;
-						border-radius: 14px;
+						border-radius: 12px;
 						padding: 0 16px;
 						margin: 10px 0 0;
-						color: rgba(226, 232, 240, 0.84);
+						color: #43634b;
 						white-space: nowrap;
-						background: rgba(255, 255, 255, 0.04);
+						background: rgba(255, 255, 255, 0.62);
 						position: relative;
-						border: 1px solid rgba(148, 163, 184, 0.08);
+						border: 1px solid rgba(207, 228, 200, 0.85);
 						height: 46px;
 						line-height: 46px;
 					}
 		
 		.el-menu-vertical-demo .el-submenu  ::v-deep .el-submenu__title:hover {
-						color: #fff;
-						background: rgba(111, 127, 95, 0.26);
+						color: #2f7c43;
+						background: #dff5e1;
 					}
 		
 		.el-menu-vertical-demo .el-submenu  ::v-deep .el-submenu__title .el-submenu__icon-arrow {
 						margin: -7px 0 0 0;
 						top: 50%;
-						color: rgba(148, 163, 184, 0.9);
+						color: #6fbd75;
 						vertical-align: middle;
 						font-size: 12px;
 						position: absolute;
@@ -229,37 +237,37 @@ export default {
 		.el-menu-vertical-demo .el-submenu  ::v-deep .el-menu {
 						margin-top: 8px;
 						padding: 4px 0 2px;
-						background: rgba(255, 255, 255, 0.02) !important;
-						border-radius: 16px;
+						background: rgba(255, 255, 255, 0.44) !important;
+						border-radius: 12px;
 					}
 		
 		.el-menu-vertical-demo .el-submenu  ::v-deep .el-menu .el-menu-item {
 						padding: 0 0 0 44px;
 						margin: 6px 0 0;
-						color: rgba(203, 213, 225, 0.78);
-						background: rgba(255, 255, 255, 0.05);
+						color: #5b735f;
+						background: rgba(255, 255, 255, 0.66);
 						line-height: 42px;
 						height: 42px;
-						border-radius: 12px;
+						border-radius: 10px;
 						border: 1px solid transparent;
 					}
 		
 		.el-menu-vertical-demo .el-submenu  ::v-deep .el-menu .el-menu-item:hover {
 						padding: 0 0 0 44px;
-						color: #eff6ff;
-						background: rgba(111, 127, 95, 0.22);
+						color: #2f7c43;
+						background: #eef8e7;
 						line-height: 42px;
 						height: 42px;
-						border-color: rgba(175, 188, 154, 0.32);
+						border-color: rgba(111, 189, 117, 0.28);
 					}
 		
 		.el-menu-vertical-demo .el-submenu  ::v-deep .el-menu .el-menu-item.is-active {
 						padding: 0 0 0 44px;
-						color: #eff6ff;
-						background: linear-gradient(90deg, rgba(111, 127, 95, 0.34), rgba(111, 127, 95, 0.14));
+						color: #226c36;
+						background: linear-gradient(90deg, #dff5e1, #f8fff4);
 						line-height: 42px;
 						height: 42px;
-						border-color: rgba(190, 202, 169, 0.36);
+						border-color: rgba(111, 189, 117, 0.36);
 					}
 		// 竖向
 			  }

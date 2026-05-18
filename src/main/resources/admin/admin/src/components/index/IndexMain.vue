@@ -86,24 +86,25 @@
 	.layout-shell {
 		height: 100%;
 		background:
-			radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 18%),
-			linear-gradient(180deg, #eff4fb 0%, #edf2f8 100%);
+			radial-gradient(circle at 8% 0, rgba(255, 243, 196, 0.72), transparent 22%),
+			radial-gradient(circle at 100% 12%, rgba(216, 239, 250, 0.7), transparent 24%),
+			linear-gradient(180deg, #f6fbf1 0%, #eef8e7 100%);
 	}
 
 	.layout-aside {
-		box-shadow: 18px 0 36px rgba(15, 23, 42, 0.08);
+		box-shadow: 14px 0 30px rgba(57, 111, 73, 0.1);
 		padding: 0 0 100px;
 		overflow: hidden;
 		top: 0;
 		left: 0;
-		background: linear-gradient(180deg, #0f172a 0%, #172033 100%);
+		background: linear-gradient(180deg, #f8fff4 0%, #e6f6dd 100%);
 		bottom: 0;
 		width: 216px;
 		font-size: 0;
 		position: fixed;
 		height: 100%;
 		z-index: 1001;
-		border-right: 1px solid rgba(148, 163, 184, 0.12);
+		border-right: 1px solid #cfe4c8;
 	}
 
 	.layout-main {
@@ -113,8 +114,8 @@
 		display: block;
 		position: relative;
 		background:
-			radial-gradient(circle at 100% 0, rgba(148, 163, 184, 0.12), transparent 20%),
-			linear-gradient(180deg, #f4f7fb 0%, #edf2f7 100%);
+			radial-gradient(circle at 100% 0, rgba(216, 239, 250, 0.78), transparent 20%),
+			linear-gradient(180deg, #f8fcf4 0%, #eff8ea 100%);
 	}
 
 	.layout-main.is-horizontal {
@@ -126,7 +127,7 @@
 		align-items: center;
 		top: 0;
 		left: 216px;
-		background: rgba(248, 250, 252, 0.92);
+		background: rgba(255, 255, 255, 0.88);
 		backdrop-filter: blur(14px);
 		display: flex;
 		width: calc(100% - 216px);
@@ -134,18 +135,18 @@
 		justify-content: center;
 		font-weight: 550;
 		z-index: 1004;
-		border-bottom: 1px solid rgba(148, 163, 184, 0.16);
-		box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+		border-bottom: 1px solid rgba(207, 228, 200, 0.9);
+		box-shadow: 0 10px 26px rgba(57, 111, 73, 0.08);
 	}
 
 	.bread-crumbs {
 		padding: 12px 18px;
 		margin: 86px 20px 0;
-		border-radius: 16px;
+		border-radius: 14px;
 		background: rgba(255, 255, 255, 0.82);
 		width: calc(100% - 40px);
-		border: 1px solid rgba(148, 163, 184, 0.18);
-		box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+		border: 1px solid rgba(207, 228, 200, 0.9);
+		box-shadow: 0 8px 22px rgba(57, 111, 73, 0.07);
 	}
 
 	.router-view {
@@ -154,11 +155,11 @@
 
 	a {
 		text-decoration: none;
-		color: #475569;
+		color: #438f55;
 	}
 
 	a:hover {
-		color: #6f7f5f;
+		color: #2f7c43;
 	}
 	
 	.el-main {

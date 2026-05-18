@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 /**
- * 维修信息
+ * 请假
  * 后端接口
  * @author 
  * @email 
@@ -76,7 +76,7 @@ public class QingjiaController {
         EntityWrapper< QingjiaEntity> ew = new EntityWrapper< QingjiaEntity>();
  		ew.allEq(MPUtil.allEQMapPre( qingjia, "qingjia")); 
 		QingjiaView qingjiaView =  qingjiaService.selectView(ew);
-		return R.ok("查询维修信息成功").put("data", qingjiaView);
+		return R.ok("查询请假成功").put("data", qingjiaView);
     }
 	
     /**

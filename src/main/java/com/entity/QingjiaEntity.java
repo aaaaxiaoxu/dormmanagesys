@@ -12,7 +12,7 @@ import java.util.Date;
 
 
 /**
- * 维修信息
+ * 请假
  * 数据库通用操作实体类（普通增删改查）
  * @author 
  * @email 

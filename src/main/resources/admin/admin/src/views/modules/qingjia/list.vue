@@ -2,11 +2,19 @@
 	<div class="main-content" :style='{"padding":"30px 0 0 0"}'>
 		<!-- 列表页 -->
 		<template v-if="showFlag">
+			<div class="leave-tip">
+				<i class="el-icon-s-order"></i>
+				<span>请假用于学生离校、返校时间审批；门禁出入只记录通行核验，不参与请假审核。</span>
+			</div>
 			<el-form class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
 				<el-row :style='{"display":"block"}' >
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">标题</label>
 						<el-input v-model="searchForm.biaoti" placeholder="标题" clearable></el-input>
+					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生姓名</label>
+						<el-input v-model="searchForm.xueshengxingming" placeholder="学生姓名" clearable></el-input>
 					</div>
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select">
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">是否通过</label>
@@ -14,15 +22,19 @@
 							<el-option v-for="(item,index) in sfshOptions" v-bind:key="index" :label="item" :value="item"></el-option>
 						</el-select>
 					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="date">
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">离开日期</label>
+						<el-date-picker value-format="yyyy-MM-dd" v-model="searchForm.qingjiariqi" type="date" placeholder="离开日期" clearable></el-date-picker>
+					</div>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 20px","outline":"none","margin":"0px 0 5px 0","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' type="success" @click="search()">查询</el-button>
 				</el-row>
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
-					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','新增')" type="success" @click="addOrUpdateHandler()">新增</el-button>
+					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#6bbf7b,#8ccf65)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">提交请假</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
 
-					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','审核')" :disabled="dataListSelections.length <= 0" type="danger" @click="shBatchDialog()">批量审核</el-button>
+					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','审核')" :disabled="dataListSelections.length <= 0" type="danger" @click="shBatchDialog()">批量审批</el-button>
 
 
 				</el-row>
@@ -83,26 +95,26 @@
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true' prop="sfsh" label="审核状态">
 						<template slot-scope="scope">
-							<span style="margin-right:10px" v-if="scope.row.sfsh=='是'">通过</span>
-							<span style="margin-right:10px" v-if="scope.row.sfsh=='否'">未通过</span>
-							<span style="margin-right:10px" v-if="scope.row.sfsh=='待审核'">待审核</span>
+							<el-tag v-if="scope.row.sfsh=='是'" type="success" size="mini">通过</el-tag>
+							<el-tag v-if="scope.row.sfsh=='否'" type="danger" size="mini">未通过</el-tag>
+							<el-tag v-if="scope.row.sfsh=='待审核'" type="warning" size="mini">待审核</el-tag>
 						</template>
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true' v-if="isAuth('qingjia','审核')" prop="sfsh" label="审核">
 						<template slot-scope="scope">
-							<el-button  type="text" size="small" @click="shDialog(scope.row)">审核</el-button>
+							<el-button  type="text" size="small" @click="shDialog(scope.row)">审批</el-button>
 						</template>
 					</el-table-column>
 					<el-table-column width="300" label="操作">
 						<template slot-scope="scope">
 							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('qingjia','查看')" type="success" size="mini" @click="addOrUpdateHandler(scope.row.id,'info')">详情</el-button>
-							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('qingjia','修改')" type="primary" size="mini" @click="addOrUpdateHandler(scope.row.id)">修改</el-button>
+							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('qingjia','修改')" type="primary" size="mini" @click="addOrUpdateHandler(scope.row.id)">修改申请</el-button>
 
 
 
 
 
-							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if="isAuth('qingjia','删除') " type="danger" size="mini" @click="deleteHandler(scope.row.id)">删除</el-button>
+							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if="isAuth('qingjia','删除') " type="danger" size="mini" @click="deleteHandler(scope.row.id)">撤回/删除</el-button>
 						</template>
 					</el-table-column>
 				</el-table>
@@ -268,41 +280,18 @@ export default {
         sort: 'id',
         order: 'desc',
       }
-           if(this.searchForm.biaoti!='' && this.searchForm.biaoti!=undefined){
+          if(this.searchForm.biaoti!='' && this.searchForm.biaoti!=undefined){
             params['biaoti'] = '%' + this.searchForm.biaoti + '%'
           }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
+          if(this.searchForm.xueshengxingming!='' && this.searchForm.xueshengxingming!=undefined){
+            params['xueshengxingming'] = '%' + this.searchForm.xueshengxingming + '%'
           }
           if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
             params['sfsh'] = this.searchForm.sfsh
           }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
+          if(this.searchForm.qingjiariqi!='' && this.searchForm.qingjiariqi!=undefined){
+            params['qingjia1_start'] = this.searchForm.qingjiariqi + ' 00:00:00'
+            params['qingjia1_end'] = this.searchForm.qingjiariqi + ' 23:59:59'
           }
       this.$http({
         url: "qingjia/page",
@@ -470,8 +459,27 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-	
-	.center-form-pv {
+		.leave-tip {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			margin: 0 20px 20px;
+			padding: 12px 16px;
+			border: 1px solid rgba(101, 178, 121, 0.26);
+			border-radius: 12px;
+			background: linear-gradient(135deg, rgba(248, 252, 236, 0.98), rgba(232, 248, 241, 0.94));
+			color: #3f6349;
+			font-size: 14px;
+			line-height: 1.6;
+			box-shadow: 0 8px 24px rgba(82, 139, 92, 0.08);
+		}
+
+		.leave-tip i {
+			color: #58a873;
+			font-size: 18px;
+		}
+
+		.center-form-pv {
 	  .el-date-editor.el-input {
 	    width: auto;
 	  }

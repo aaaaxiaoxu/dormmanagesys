@@ -1,0 +1,6 @@
+后台路径地址：
+localhost:8080/dormmanagesys/admin/dist/index.html
+
+
+管理员账号：admin
+管理员密码：admin

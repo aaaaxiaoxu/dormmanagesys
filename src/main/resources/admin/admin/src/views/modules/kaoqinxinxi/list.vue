@@ -2,6 +2,10 @@
 	<div class="main-content" :style='{"padding":"30px 0 0 0"}'>
 		<!-- 列表页 -->
 		<template v-if="showFlag">
+			<div class="attendance-tip">
+				<i class="el-icon-warning-outline"></i>
+				<span>考勤统计用于登记晚归、未归和违纪备注，作为宿舍管理、评优和异常提醒依据。</span>
+			</div>
 			<el-form class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
 				<el-row :style='{"display":"block"}' >
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
@@ -9,14 +13,28 @@
 						<el-input v-model="searchForm.sushemingcheng" placeholder="宿舍名称" clearable></el-input>
 					</div>
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">楼栋</label>
+						<el-input v-model="searchForm.susheloudong" placeholder="宿舍楼栋" clearable></el-input>
+					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">月份</label>
 						<el-input v-model="searchForm.yuefen" placeholder="月份" clearable></el-input>
+					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生姓名</label>
+						<el-input v-model="searchForm.xueshengxingming" placeholder="学生姓名" clearable></el-input>
+					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select">
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">异常类型</label>
+						<el-select clearable v-model="searchForm.abnormalType" placeholder="异常类型">
+							<el-option v-for="item in abnormalTypeOptions" :key="item" :label="item" :value="item"></el-option>
+						</el-select>
 					</div>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 20px","outline":"none","margin":"0px 0 5px 0","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' type="success" @click="search()">查询</el-button>
 				</el-row>
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
-					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('kaoqinxinxi','新增')" type="success" @click="addOrUpdateHandler()">新增</el-button>
+					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('kaoqinxinxi','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">登记异常</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('kaoqinxinxi','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
 
@@ -24,7 +42,22 @@
 
 				</el-row>
 			</el-form>
-			
+
+			<div class="attendance-summary">
+				<div class="summary-card">
+					<span>晚归累计</span>
+					<strong>{{attendanceStats.late}}</strong>
+				</div>
+				<div class="summary-card">
+					<span>未归累计</span>
+					<strong>{{attendanceStats.absent}}</strong>
+				</div>
+				<div class="summary-card">
+					<span>违纪备注</span>
+					<strong>{{attendanceStats.violation}}</strong>
+				</div>
+			</div>
+
 			<!-- <div> -->
 				<el-table class="tables"
 					:stripe='false'
@@ -91,9 +124,9 @@
 							{{scope.row.wanguitianshu}}
 						</template>
 					</el-table-column>
-					<el-table-column :resizable='true' :sortable='true'  
+					<el-table-column :resizable='true' :sortable='true'
 						prop="queqintianshu"
-					label="缺寝天数">
+					label="未归天数">
 						<template slot-scope="scope">
 							{{scope.row.queqintianshu}}
 						</template>
@@ -112,10 +145,20 @@
 							{{scope.row.dengjishijian}}
 						</template>
 					</el-table-column>
+					<el-table-column label="异常等级" width="120">
+						<template slot-scope="scope">
+							<el-tag :type="abnormalLevelType(scope.row)" size="mini">{{abnormalLevelText(scope.row)}}</el-tag>
+						</template>
+					</el-table-column>
+					<el-table-column prop="beizhu" label="违纪/处理备注">
+						<template slot-scope="scope">
+							<span v-html="scope.row.beizhu"></span>
+						</template>
+					</el-table-column>
 					<el-table-column width="300" label="操作">
 						<template slot-scope="scope">
 							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('kaoqinxinxi','查看')" type="success" size="mini" @click="addOrUpdateHandler(scope.row.id,'info')">详情</el-button>
-							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('kaoqinxinxi','修改')" type="primary" size="mini" @click="addOrUpdateHandler(scope.row.id)">修改</el-button>
+							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('kaoqinxinxi','修改')" type="primary" size="mini" @click="addOrUpdateHandler(scope.row.id)">补充处理</el-button>
 
 
 
@@ -171,6 +214,12 @@ export default {
       totalPage: 0,
       dataListLoading: false,
       dataListSelections: [],
+      abnormalTypeOptions: ['晚归', '未归', '违纪'],
+      attendanceStats: {
+        late: 0,
+        absent: 0,
+        violation: 0
+      },
       showFlag: true,
       sfshVisiable: false,
       shForm: {},
@@ -188,6 +237,7 @@ export default {
   created() {
     this.init();
     this.getDataList();
+    this.loadAttendanceStats();
     this.contentStyleChange()
   },
   mounted() {
@@ -233,6 +283,7 @@ export default {
     search() {
       this.pageIndex = 1;
       this.getDataList();
+      this.loadAttendanceStats();
     },
 
     // 获取数据列表
@@ -247,8 +298,14 @@ export default {
            if(this.searchForm.sushemingcheng!='' && this.searchForm.sushemingcheng!=undefined){
             params['sushemingcheng'] = '%' + this.searchForm.sushemingcheng + '%'
           }
+           if(this.searchForm.susheloudong!='' && this.searchForm.susheloudong!=undefined){
+            params['susheloudong'] = '%' + this.searchForm.susheloudong + '%'
+          }
            if(this.searchForm.yuefen!='' && this.searchForm.yuefen!=undefined){
             params['yuefen'] = '%' + this.searchForm.yuefen + '%'
+          }
+           if(this.searchForm.xueshengxingming!='' && this.searchForm.xueshengxingming!=undefined){
+            params['xueshengxingming'] = '%' + this.searchForm.xueshengxingming + '%'
           }
       this.$http({
         url: "kaoqinxinxi/page",
@@ -262,8 +319,92 @@ export default {
           this.dataList = [];
           this.totalPage = 0;
         }
+        this.dataList = this.filterAttendanceList(this.dataList);
+        if (this.searchForm.abnormalType) {
+          this.totalPage = this.dataList.length;
+        }
         this.dataListLoading = false;
       });
+    },
+    buildAttendanceQueryParams() {
+      let params = {
+        page: 1,
+        limit: 1000,
+        sort: 'id',
+        order: 'desc',
+      }
+      if(this.searchForm.sushemingcheng!='' && this.searchForm.sushemingcheng!=undefined){
+        params['sushemingcheng'] = '%' + this.searchForm.sushemingcheng + '%'
+      }
+      if(this.searchForm.susheloudong!='' && this.searchForm.susheloudong!=undefined){
+        params['susheloudong'] = '%' + this.searchForm.susheloudong + '%'
+      }
+      if(this.searchForm.yuefen!='' && this.searchForm.yuefen!=undefined){
+        params['yuefen'] = '%' + this.searchForm.yuefen + '%'
+      }
+      if(this.searchForm.xueshengxingming!='' && this.searchForm.xueshengxingming!=undefined){
+        params['xueshengxingming'] = '%' + this.searchForm.xueshengxingming + '%'
+      }
+      return params;
+    },
+    loadAttendanceStats() {
+      this.$http({
+        url: "kaoqinxinxi/page",
+        method: "get",
+        params: this.buildAttendanceQueryParams()
+      }).then(({ data }) => {
+        const list = data && data.code === 0 ? this.filterAttendanceList(data.data.list || []) : [];
+        this.attendanceStats = {
+          late: list.reduce((sum, item) => sum + this.numberValue(item.wanguitianshu), 0),
+          absent: list.reduce((sum, item) => sum + this.numberValue(item.queqintianshu), 0),
+          violation: list.filter(item => this.hasViolationRemark(item)).length
+        };
+      });
+    },
+    filterAttendanceList(list) {
+      if (!this.searchForm.abnormalType) {
+        return list || [];
+      }
+      return (list || []).filter(item => {
+        if (this.searchForm.abnormalType === '晚归') {
+          return this.numberValue(item.wanguitianshu) > 0;
+        }
+        if (this.searchForm.abnormalType === '未归') {
+          return this.numberValue(item.queqintianshu) > 0;
+        }
+        if (this.searchForm.abnormalType === '违纪') {
+          return this.hasViolationRemark(item);
+        }
+        return true;
+      });
+    },
+    numberValue(value) {
+      const num = parseInt(value, 10);
+      return Number.isNaN(num) ? 0 : num;
+    },
+    hasViolationRemark(item) {
+      const remark = String(item && item.beizhu ? item.beizhu : '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, '').trim();
+      return remark.length > 0;
+    },
+    abnormalLevelText(row) {
+      const score = this.numberValue(row.wanguitianshu) + this.numberValue(row.queqintianshu) * 2 + (this.hasViolationRemark(row) ? 2 : 0);
+      if (score >= 5) {
+        return '高风险';
+      }
+      if (score >= 2) {
+        return '需关注';
+      }
+      return '正常';
+    },
+    abnormalLevelType(row) {
+      const text = this.abnormalLevelText(row);
+      if (text === '高风险') {
+        return 'danger';
+      }
+      if (text === '需关注') {
+        return 'warning';
+      }
+      return 'success';
     },
     // 每页数
     sizeChangeHandle(val) {
@@ -335,8 +476,56 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-	
-	.center-form-pv {
+	.attendance-tip {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0 20px 20px;
+		padding: 12px 16px;
+		border: 1px solid rgba(101, 178, 121, 0.26);
+		border-radius: 12px;
+		background: linear-gradient(135deg, rgba(248, 252, 236, 0.98), rgba(232, 248, 241, 0.94));
+		color: #3f6349;
+		font-size: 14px;
+		line-height: 1.6;
+		box-shadow: 0 8px 24px rgba(82, 139, 92, 0.08);
+	}
+
+	.attendance-tip i {
+		color: #d48b36;
+		font-size: 18px;
+	}
+
+	.attendance-summary {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 12px;
+		margin: 0 20px 16px 210px;
+		width: calc(100% - 230px);
+	}
+
+	.summary-card {
+		padding: 14px 16px;
+		border-radius: 10px;
+		background: linear-gradient(135deg, #f7fbe9, #ecf9f3);
+		border: 1px solid rgba(102, 166, 87, 0.22);
+		box-shadow: 0 8px 24px rgba(82, 139, 92, 0.08);
+	}
+
+	.summary-card span {
+		display: block;
+		color: #6f8064;
+		font-size: 13px;
+		margin-bottom: 6px;
+	}
+
+	.summary-card strong {
+		color: #315a3a;
+		font-size: 24px;
+		line-height: 1;
+	}
+
+		.center-form-pv {
 	  .el-date-editor.el-input {
 	    width: auto;
 	  }

@@ -67,11 +67,11 @@
 				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-else class="input" label="晚归天数" prop="wanguitianshu">
 					<el-input v-model="ruleForm.wanguitianshu" placeholder="晚归天数" readonly></el-input>
 				</el-form-item>
-				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="input" v-if="type!='info'"  label="缺寝天数" prop="queqintianshu">
-					<el-input v-model="ruleForm.queqintianshu" placeholder="缺寝天数" clearable  :readonly="ro.queqintianshu"></el-input>
+				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="input" v-if="type!='info'"  label="未归天数" prop="queqintianshu">
+					<el-input v-model="ruleForm.queqintianshu" placeholder="未归天数" clearable  :readonly="ro.queqintianshu"></el-input>
 				</el-form-item>
-				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-else class="input" label="缺寝天数" prop="queqintianshu">
-					<el-input v-model="ruleForm.queqintianshu" placeholder="缺寝天数" readonly></el-input>
+				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-else class="input" label="未归天数" prop="queqintianshu">
+					<el-input v-model="ruleForm.queqintianshu" placeholder="未归天数" readonly></el-input>
 				</el-form-item>
 				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="input" v-if="type!='info'"  label="请假天数" prop="qingjiatianshu">
 					<el-input v-model="ruleForm.qingjiatianshu" placeholder="请假天数" clearable  :readonly="ro.qingjiatianshu"></el-input>
@@ -93,7 +93,7 @@
 					<el-input v-model="ruleForm.dengjishijian" placeholder="登记时间" readonly></el-input>
 				</el-form-item>
 			</template>
-				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-if="type!='info'"  label="备注" prop="beizhu">
+				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-if="type!='info'"  label="违纪/处理备注" prop="beizhu">
 					<editor 
 						style="min-width: 200px; max-width: 600px;"
 						v-model="ruleForm.beizhu" 
@@ -101,7 +101,7 @@
 						action="file/upload">
 					</editor>
 				</el-form-item>
-				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-else-if="ruleForm.beizhu" label="备注" prop="beizhu">
+				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-else-if="ruleForm.beizhu" label="违纪/处理备注" prop="beizhu">
                     <span :style='{"fontSize":"14px","lineHeight":"40px","color":"#333","fontWeight":"500","display":"inline-block"}' v-html="ruleForm.beizhu"></span>
                 </el-form-item>
 			<el-form-item :style='{"padding":"0","margin":"0"}' class="btn">

@@ -8,12 +8,19 @@
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生学号</label>
 						<el-input v-model="searchForm.xueshengxuehao" placeholder="学生学号" clearable></el-input>
 					</div>
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
-						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生姓名</label>
-						<el-input v-model="searchForm.xueshengxingming" placeholder="学生姓名" clearable></el-input>
-					</div>
-					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 20px","outline":"none","margin":"0px 0 5px 0","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' type="success" @click="search()">查询</el-button>
-				</el-row>
+						<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+							<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生姓名</label>
+							<el-input v-model="searchForm.xueshengxingming" placeholder="学生姓名" clearable></el-input>
+						</div>
+						<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+							<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">建档状态</label>
+							<el-select clearable v-model="searchForm.faceStatus" placeholder="建档状态">
+								<el-option label="已建档" value="archived"></el-option>
+								<el-option label="未建档" value="missing"></el-option>
+							</el-select>
+						</div>
+						<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 20px","outline":"none","margin":"0px 0 5px 0","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' type="success" @click="search()">查询</el-button>
+					</el-row>
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('xuesheng','新增')" type="success" @click="addOrUpdateHandler()">新增</el-button>
@@ -31,7 +38,7 @@
 					:stripe='false'
 					:style='{"padding":"0","boxShadow":" 0px 4px 10px 0px rgba(0,0,0,0.3020)","borderColor":"#eee","margin":"0 0 15px 210px","borderWidth":"1px 0 0 1px","background":"#fff","width":"calc(100% - 230px)","borderStyle":"solid"}' 
 					v-if="isAuth('xuesheng','查看')"
-					:data="dataList"
+						:data="faceFilteredDataList"
 					v-loading="dataListLoading"
 				@selection-change="selectionChangeHandler">
 					<el-table-column :resizable='true' type="selection" align="center" width="50"></el-table-column>
@@ -57,15 +64,18 @@
 							{{scope.row.xingbie}}
 						</template>
 					</el-table-column>
-					<el-table-column :resizable='true' :sortable='true' prop="touxiang" width="200" label="头像">
-						<template slot-scope="scope">
-							<div v-if="scope.row.touxiang">
-								<img v-if="scope.row.touxiang.substring(0,4)=='http'" :src="scope.row.touxiang.split(',')[0]" width="100" height="100">
-								<img v-else :src="$base.url+scope.row.touxiang.split(',')[0]" width="100" height="100">
-							</div>
-							<div v-else>无图片</div>
-						</template>
-					</el-table-column>
+						<el-table-column :resizable='true' :sortable='true' prop="touxiang" width="220" label="人脸档案">
+							<template slot-scope="scope">
+								<div v-if="hasFaceArchive(scope.row)" class="face-cell">
+									<img :src="faceArchiveUrl(scope.row)" width="72" height="72">
+									<el-tag type="success" size="small">已建档</el-tag>
+								</div>
+								<div v-else class="face-missing">
+									<i class="el-icon-warning-outline"></i>
+									<span>未建档</span>
+								</div>
+							</template>
+						</el-table-column>
 					<el-table-column :resizable='true' :sortable='true'  
 						prop="xueshengdianhua"
 					label="学生电话">
@@ -136,9 +146,10 @@ import AddOrUpdate from "./add-or-update";
 export default {
   data() {
     return {
-      searchForm: {
-        key: ""
-      },
+	      searchForm: {
+	        key: "",
+	        faceStatus: ""
+	      },
       form:{},
       dataList: [],
       pageIndex: 1,
@@ -172,10 +183,21 @@ export default {
       return val.replace(/<[^>]*>/g).replace(/undefined/g,'');
     }
   },
-  components: {
-    AddOrUpdate,
-  },
-  methods: {
+	  components: {
+	    AddOrUpdate,
+	  },
+	  computed: {
+	    faceFilteredDataList() {
+	      if (!this.searchForm.faceStatus) {
+	        return this.dataList;
+	      }
+	      return this.dataList.filter(row => {
+	        const archived = this.hasFaceArchive(row);
+	        return this.searchForm.faceStatus === 'archived' ? archived : !archived;
+	      });
+	    }
+	  },
+	  methods: {
 
     contentStyleChange() {
       this.contentPageStyleChange()
@@ -205,12 +227,22 @@ export default {
 
     init () {
     },
-    search() {
-      this.pageIndex = 1;
-      this.getDataList();
-    },
+	    search() {
+	      this.pageIndex = 1;
+	      this.getDataList();
+	    },
+	    hasFaceArchive(row) {
+	      return !!(row && row.touxiang && String(row.touxiang).trim());
+	    },
+	    faceArchiveUrl(row) {
+	      if (!this.hasFaceArchive(row)) {
+	        return '';
+	      }
+	      const path = String(row.touxiang).split(',')[0];
+	      return path.substring(0, 4) === 'http' ? path : this.$base.url + path;
+	    },
 
-    // 获取数据列表
+	    // 获取数据列表
     getDataList() {
       this.dataListLoading = true;
       let params = {
@@ -636,11 +668,11 @@ export default {
 				height: 28px;
 			}
 	
-	.main-content .el-pagination  ::v-deep .el-pagination__jump .el-input .el-input__inner {
-				border: 1px solid #DCDFE6;
-				cursor: pointer;
-				padding: 0 3px;
-				color: #606266;
+		.main-content .el-pagination  ::v-deep .el-pagination__jump .el-input .el-input__inner {
+					border: 1px solid #DCDFE6;
+					cursor: pointer;
+					padding: 0 3px;
+					color: #606266;
 				display: inline-block;
 				font-size: 14px;
 				line-height: 28px;
@@ -648,7 +680,28 @@ export default {
 				outline: 0;
 				background: #FFF;
 				width: 100%;
-				text-align: center;
-				height: 28px;
-			}
-</style>
+					text-align: center;
+					height: 28px;
+				}
+
+  .face-cell {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .face-cell img {
+    border: 1px solid #d8efd5;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+
+  .face-missing {
+    align-items: center;
+    color: #d88934;
+    display: inline-flex;
+    font-size: 14px;
+    gap: 6px;
+  }
+	</style>

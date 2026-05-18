@@ -30,8 +30,9 @@
 				</el-row>
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
-					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">提交报修</el-button>
-					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
+						<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">提交报修</el-button>
+						<el-button :style='{"border":"2px solid #5fb98a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#3f8d67","borderRadius":"40px","background":"#f6fff8","width":"160px","fontSize":"14px","height":"40px"}' type="success" icon="el-icon-download" @click="$exportTable('weixiuxinxi')">导出Excel</el-button>
+						<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
 
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','审核')" :disabled="dataListSelections.length <= 0" type="danger" @click="shBatchDialog()">批量更新状态</el-button>

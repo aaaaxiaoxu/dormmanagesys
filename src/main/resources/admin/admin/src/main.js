@@ -62,6 +62,29 @@ Vue.prototype.$api = api
 Vue.prototype.isAuth = isAuth
 Vue.prototype.getCurDateTime = getCurDateTime
 Vue.prototype.getCurDate = getCurDate
+Vue.prototype.$exportTable = function(tableName) {
+  http({
+    url: `export/${tableName}`,
+    method: 'get',
+    responseType: 'blob'
+  }).then(res => {
+    const contentType = res.headers['content-type'] || 'application/vnd.ms-excel';
+    const blob = new Blob([res.data], { type: contentType });
+    const disposition = res.headers['content-disposition'] || '';
+    const match = disposition.match(/filename\*=UTF-8''([^;]+)/);
+    const filename = match ? decodeURIComponent(match[1]) : `${tableName}.xls`;
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(link.href);
+    this.$message.success('导出成功');
+  }).catch(() => {
+    this.$message.error('导出失败');
+  });
+}
 // Vue.prototype.$base = base
 Vue.use(ElementUI, { size: 'medium', zIndex: 3000 });
 Vue.config.productionTip = false

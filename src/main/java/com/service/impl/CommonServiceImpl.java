@@ -66,4 +66,9 @@ public class CommonServiceImpl implements CommonService {
 		return commonDao.selectExportRows(params);
 	}
 
+	@Override
+	public void insertImportRow(Map<String, Object> params) {
+		commonDao.insertImportRow(params);
+	}
+
 }

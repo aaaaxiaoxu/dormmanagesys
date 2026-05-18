@@ -69,8 +69,16 @@
                 </if>
         </select>
 
-	<select id="selectExportRows" resultType="map" >
-		SELECT ${columns} FROM ${table} ORDER BY id DESC LIMIT 5000
-	</select>
+		<select id="selectExportRows" resultType="map" >
+			SELECT ${columns} FROM ${table} ORDER BY id DESC LIMIT 5000
+		</select>
 
-</mapper>
+		<insert id="insertImportRow">
+			INSERT INTO ${table} (${columns})
+			VALUES
+			<foreach collection="values" item="value" open="(" separator="," close=")">
+				#{value}
+			</foreach>
+		</insert>
+
+	</mapper>

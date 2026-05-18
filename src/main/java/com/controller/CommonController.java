@@ -3,6 +3,7 @@ package com.controller;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -12,10 +13,17 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -23,12 +31,14 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.annotation.IgnoreAuth;
 import com.baidu.aip.face.AipFace;
@@ -61,7 +71,8 @@ public class CommonController{
 		Map<String, ExportDefinition> definitions = new LinkedHashMap<String, ExportDefinition>();
 		definitions.put("xuesheng", new ExportDefinition("学生信息",
 				new String[]{"xueshengxuehao", "xueshengxingming", "xingbie", "xueshengdianhua", "banji", "zhuanye"},
-				new String[]{"学生学号", "学生姓名", "性别", "学生电话", "班级", "专业"}));
+				new String[]{"学生学号", "学生姓名", "性别", "学生电话", "班级", "专业"},
+				buildStudentImportDefaults()));
 		definitions.put("sushexinxi", new ExportDefinition("宿舍信息",
 				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "kezhurenshu", "yizhurenshu", "youchuangwei"},
 				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "可住人数", "已住人数", "有床位"}));
@@ -86,15 +97,27 @@ public class CommonController{
 		return definitions;
 	}
 
+	private static Map<String, String> buildStudentImportDefaults() {
+		Map<String, String> defaults = new LinkedHashMap<String, String>();
+		defaults.put("mima", "123456");
+		return defaults;
+	}
+
 	private static class ExportDefinition {
 		private String title;
 		private String[] columns;
 		private String[] labels;
+		private Map<String, String> importDefaults;
 
 		private ExportDefinition(String title, String[] columns, String[] labels) {
+			this(title, columns, labels, new LinkedHashMap<String, String>());
+		}
+
+		private ExportDefinition(String title, String[] columns, String[] labels, Map<String, String> importDefaults) {
 			this.title = title;
 			this.columns = columns;
 			this.labels = labels;
+			this.importDefaults = importDefaults;
 		}
 	}
 
@@ -148,6 +171,74 @@ public class CommonController{
 			sheet.autoSizeColumn(i);
 		}
 		return workbook;
+	}
+
+	/**
+	 * 白名单Excel数据导入
+	 */
+	@Transactional(rollbackFor = Exception.class)
+	@RequestMapping("/import/{tableName}")
+	public R importTable(@PathVariable("tableName") String tableName, @RequestParam("file") MultipartFile file) throws Exception {
+		ExportDefinition definition = EXPORT_DEFINITIONS.get(tableName);
+		if(definition == null) {
+			return R.error("暂不支持导入该数据表");
+		}
+		if(file == null || file.isEmpty()) {
+			return R.error("请选择需要导入的Excel文件");
+		}
+		InputStream inputStream = file.getInputStream();
+		try {
+			Workbook workbook = WorkbookFactory.create(inputStream);
+			Sheet sheet = workbook.getSheetAt(0);
+			if(sheet == null || sheet.getLastRowNum() < 1) {
+				return R.error("Excel没有可导入的数据");
+			}
+			DataFormatter formatter = new DataFormatter();
+			int imported = 0;
+			for(int i = 1; i <= sheet.getLastRowNum(); i++) {
+				Row row = sheet.getRow(i);
+				if(row == null) {
+					continue;
+				}
+				List<String> columns = new ArrayList<String>();
+				List<Object> values = new ArrayList<Object>();
+				boolean hasValue = false;
+				for(int j = 0; j < definition.columns.length; j++) {
+					columns.add(definition.columns[j]);
+					String value = getImportCellValue(row, j, formatter);
+					if(StringUtils.isNotBlank(value)) {
+						hasValue = true;
+					}
+					values.add(StringUtils.isBlank(value) ? null : value);
+				}
+				if(!hasValue) {
+					continue;
+				}
+				for(Entry<String, String> entry : definition.importDefaults.entrySet()) {
+					if(!columns.contains(entry.getKey())) {
+						columns.add(entry.getKey());
+						values.add(entry.getValue());
+					}
+				}
+				Map<String, Object> params = new HashMap<String, Object>();
+				params.put("table", tableName);
+				params.put("columns", StringUtils.join(columns, ","));
+				params.put("values", values);
+				commonService.insertImportRow(params);
+				imported++;
+			}
+			return R.ok().put("count", imported);
+		} finally {
+			inputStream.close();
+		}
+	}
+
+	private String getImportCellValue(Row row, int columnIndex, DataFormatter formatter) {
+		Cell cell = row.getCell(columnIndex);
+		if(cell == null) {
+			return "";
+		}
+		return StringUtils.trimToEmpty(formatter.formatCellValue(cell));
 	}
 
 	private Object getColumnValue(Map<String, Object> row, String column) {

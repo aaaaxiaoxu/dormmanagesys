@@ -21,4 +21,6 @@ public interface CommonService {
 	List<Map<String, Object>> selectTimeStatValue(Map<String, Object> params);
 
 	List<Map<String, Object>> selectExportRows(Map<String, Object> params);
+
+	void insertImportRow(Map<String, Object> params);
 }

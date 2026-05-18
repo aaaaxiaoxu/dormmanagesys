@@ -2,11 +2,19 @@
 	<div class="main-content" :style='{"padding":"30px 0 0 0"}'>
 		<!-- 列表页 -->
 		<template v-if="showFlag">
+			<div class="hygiene-tip">
+				<i class="el-icon-medal"></i>
+				<span>卫生检查以宿舍为单位记录打扫情况、评分和检查评语，系统会按最新记录汇总平均分和排行榜。</span>
+			</div>
 			<el-form class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
 				<el-row :style='{"display":"block"}' >
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">宿舍名称</label>
 						<el-input v-model="searchForm.sushemingcheng" placeholder="宿舍名称" clearable></el-input>
+					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">楼栋</label>
+						<el-input v-model="searchForm.susheloudong" placeholder="宿舍楼栋" clearable></el-input>
 					</div>
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select" label="卫生情况" prop="weishengqingkuang">
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">卫生情况</label>
@@ -20,11 +28,16 @@
 							<el-option v-for="(item,index) in sfshOptions" v-bind:key="index" :label="item" :value="item"></el-option>
 						</el-select>
 					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="date">
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">检查日期</label>
+						<el-date-picker value-format="yyyy-MM-dd" v-model="searchForm.dengjiriqi" type="date" placeholder="检查日期" clearable></el-date-picker>
+					</div>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 20px","outline":"none","margin":"0px 0 5px 0","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' type="success" @click="search()">查询</el-button>
 				</el-row>
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
-					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','新增')" type="success" @click="addOrUpdateHandler()">新增</el-button>
+					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">登记检查</el-button>
+					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','查看')" type="success" icon="el-icon-medal" @click="openHygieneRanking()">评分排行</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
 
@@ -33,7 +46,22 @@
 
 				</el-row>
 			</el-form>
-			
+
+			<div class="hygiene-summary">
+				<div class="summary-card">
+					<span>检查记录</span>
+					<strong>{{hygieneStats.total}}</strong>
+				</div>
+				<div class="summary-card">
+					<span>平均评分</span>
+					<strong>{{hygieneStats.averageScore}}</strong>
+				</div>
+				<div class="summary-card">
+					<span>优秀宿舍</span>
+					<strong>{{hygieneStats.excellentCount}}</strong>
+				</div>
+			</div>
+
 			<!-- <div> -->
 				<el-table class="tables"
 					:stripe='false'
@@ -104,7 +132,15 @@
 						prop="pingfen"
 					label="评分">
 						<template slot-scope="scope">
-							{{scope.row.pingfen}}
+							<div class="score-cell">
+								<span>{{normalizeScore(scope.row.pingfen)}}分</span>
+								<el-progress :percentage="normalizeScore(scope.row.pingfen)" :stroke-width="8" :show-text="false"></el-progress>
+							</div>
+						</template>
+					</el-table-column>
+					<el-table-column :resizable='true' :sortable='true' prop="xiangqing" label="检查评语">
+						<template slot-scope="scope">
+							<span v-html="scope.row.xiangqing"></span>
 						</template>
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true' prop="shhf" label="审核回复"></el-table-column>
@@ -193,6 +229,22 @@
 				<el-button type="primary" @click="shBatchHandler">确 定</el-button>
 			</span>
 		</el-dialog>
+		<el-dialog title="卫生评分排行榜" :visible.sync="hygieneRankingVisible" width="720px" class="hygiene-ranking-dialog">
+			<el-table :data="hygieneRanking" height="380" stripe>
+				<el-table-column type="index" label="排名" width="70"></el-table-column>
+				<el-table-column prop="sushemingcheng" label="宿舍名称"></el-table-column>
+				<el-table-column prop="susheloudong" label="楼栋" width="110"></el-table-column>
+				<el-table-column prop="fangjianhao" label="房间号" width="110"></el-table-column>
+				<el-table-column label="评分" width="180">
+					<template slot-scope="scope">
+						<div class="score-cell">
+							<span>{{scope.row.normalizedScore}}分</span>
+							<el-progress :percentage="scope.row.normalizedScore" :stroke-width="8" :show-text="false"></el-progress>
+						</div>
+					</template>
+				</el-table-column>
+			</el-table>
+		</el-dialog>
 
 
 
@@ -227,6 +279,13 @@ export default {
         shhf:''
       },
       batchIds:[], 
+      hygieneStats: {
+        total: 0,
+        averageScore: 0,
+        excellentCount: 0
+      },
+      hygieneRankingVisible: false,
+      hygieneRanking: [],
       chartVisiable: false,
       chartVisiable1: false,
       chartVisiable2: false,
@@ -241,6 +300,7 @@ export default {
   created() {
     this.init();
     this.getDataList();
+    this.loadHygieneStats();
     this.contentStyleChange()
   },
   mounted() {
@@ -288,6 +348,7 @@ export default {
     search() {
       this.pageIndex = 1;
       this.getDataList();
+      this.loadHygieneStats();
     },
 
     // 获取数据列表
@@ -302,23 +363,8 @@ export default {
            if(this.searchForm.sushemingcheng!='' && this.searchForm.sushemingcheng!=undefined){
             params['sushemingcheng'] = '%' + this.searchForm.sushemingcheng + '%'
           }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
+          if(this.searchForm.susheloudong!='' && this.searchForm.susheloudong!=undefined){
+            params['susheloudong'] = '%' + this.searchForm.susheloudong + '%'
           }
            if(this.searchForm.weishengqingkuang!='' && this.searchForm.weishengqingkuang!=undefined){
             params['weishengqingkuang'] = this.searchForm.weishengqingkuang
@@ -326,17 +372,9 @@ export default {
           if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
             params['sfsh'] = this.searchForm.sfsh
           }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
-          }
-          if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
-            params['sfsh'] = this.searchForm.sfsh
+          if(this.searchForm.dengjiriqi!='' && this.searchForm.dengjiriqi!=undefined){
+            params['dengjiriqi_start'] = this.searchForm.dengjiriqi
+            params['dengjiriqi_end'] = this.searchForm.dengjiriqi
           }
       this.$http({
         url: "weishengxinxi/page",
@@ -352,6 +390,73 @@ export default {
         }
         this.dataListLoading = false;
       });
+    },
+    buildHygieneQueryParams() {
+      let params = {
+        page: 1,
+        limit: 1000,
+        sort: 'pingfen',
+        order: 'desc',
+      }
+      if(this.searchForm.sushemingcheng!='' && this.searchForm.sushemingcheng!=undefined){
+        params['sushemingcheng'] = '%' + this.searchForm.sushemingcheng + '%'
+      }
+      if(this.searchForm.susheloudong!='' && this.searchForm.susheloudong!=undefined){
+        params['susheloudong'] = '%' + this.searchForm.susheloudong + '%'
+      }
+      if(this.searchForm.weishengqingkuang!='' && this.searchForm.weishengqingkuang!=undefined){
+        params['weishengqingkuang'] = this.searchForm.weishengqingkuang
+      }
+      if(this.searchForm.sfsh!='' && this.searchForm.sfsh!=undefined){
+        params['sfsh'] = this.searchForm.sfsh
+      }
+      if(this.searchForm.dengjiriqi!='' && this.searchForm.dengjiriqi!=undefined){
+        params['dengjiriqi_start'] = this.searchForm.dengjiriqi
+        params['dengjiriqi_end'] = this.searchForm.dengjiriqi
+      }
+      return params;
+    },
+    loadHygieneStats() {
+      this.$http({
+        url: "weishengxinxi/page",
+        method: "get",
+        params: this.buildHygieneQueryParams()
+      }).then(({ data }) => {
+        const list = data && data.code === 0 ? (data.data.list || []) : [];
+        this.buildHygieneStats(list);
+        this.hygieneRanking = this.buildHygieneRanking(list);
+      });
+    },
+    buildHygieneStats(list) {
+      const scores = (list || []).map(item => this.normalizeScore(item.pingfen)).filter(score => score > 0);
+      const totalScore = scores.reduce((sum, score) => sum + score, 0);
+      this.hygieneStats = {
+        total: (list || []).length,
+        averageScore: scores.length ? Math.round(totalScore / scores.length) : 0,
+        excellentCount: scores.filter(score => score >= 90).length
+      };
+    },
+    buildHygieneRanking(list) {
+      return (list || [])
+        .map(item => Object.assign({}, item, {
+          normalizedScore: this.normalizeScore(item.pingfen)
+        }))
+        .sort((a, b) => b.normalizedScore - a.normalizedScore)
+        .slice(0, 20);
+    },
+    openHygieneRanking() {
+      this.hygieneRankingVisible = true;
+      this.loadHygieneStats();
+    },
+    normalizeScore(score) {
+      const value = parseInt(score, 10);
+      if (Number.isNaN(value) || value < 0) {
+        return 0;
+      }
+      if (value > 100) {
+        return 100;
+      }
+      return value;
     },
     // 每页数
     sizeChangeHandle(val) {
@@ -420,6 +525,7 @@ export default {
               duration: 1500,
               onClose: () => {
                 this.getDataList();
+                this.loadHygieneStats();
                 this.shDialog()
               }
             });
@@ -455,6 +561,7 @@ export default {
               duration: 1500,
               onClose: () => {
                 this.getDataList();
+                this.loadHygieneStats();
                 this.shBatchDialog()
               }
             });
@@ -507,7 +614,67 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-	
+	.hygiene-tip {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0 20px 20px;
+		padding: 12px 16px;
+		border: 1px solid rgba(101, 178, 121, 0.26);
+		border-radius: 12px;
+		background: linear-gradient(135deg, rgba(248, 252, 236, 0.98), rgba(232, 248, 241, 0.94));
+		color: #3f6349;
+		font-size: 14px;
+		line-height: 1.6;
+		box-shadow: 0 8px 24px rgba(82, 139, 92, 0.08);
+	}
+
+	.hygiene-tip i {
+		color: #58a873;
+		font-size: 18px;
+	}
+
+	.hygiene-summary {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 12px;
+		margin: 0 20px 16px 210px;
+		width: calc(100% - 230px);
+	}
+
+	.summary-card {
+		padding: 14px 16px;
+		border-radius: 10px;
+		background: linear-gradient(135deg, #f7fbe9, #ecf9f3);
+		border: 1px solid rgba(102, 166, 87, 0.22);
+		box-shadow: 0 8px 24px rgba(82, 139, 92, 0.08);
+	}
+
+	.summary-card span {
+		display: block;
+		color: #6f8064;
+		font-size: 13px;
+		margin-bottom: 6px;
+	}
+
+	.summary-card strong {
+		color: #315a3a;
+		font-size: 24px;
+		line-height: 1;
+	}
+
+	.score-cell {
+		display: grid;
+		grid-template-columns: 48px minmax(80px, 1fr);
+		align-items: center;
+		gap: 8px;
+	}
+
+	.score-cell span {
+		color: #315a3a;
+		font-weight: 700;
+	}
+
 	.center-form-pv {
 	  .el-date-editor.el-input {
 	    width: auto;

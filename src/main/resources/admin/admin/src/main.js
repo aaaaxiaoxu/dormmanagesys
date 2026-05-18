@@ -85,6 +85,42 @@ Vue.prototype.$exportTable = function(tableName) {
     this.$message.error('导出失败');
   });
 }
+Vue.prototype.$importTable = function(tableName, onSuccess) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.xls,.xlsx';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+  input.onchange = () => {
+    const file = input.files && input.files[0];
+    document.body.removeChild(input);
+    if (!file) {
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    http({
+      url: `import/${tableName}`,
+      method: 'post',
+      data: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }).then(({ data }) => {
+      if (data && data.code === 0) {
+        this.$message.success(`导入成功，共${data.count || 0}条`);
+        if (typeof onSuccess === 'function') {
+          onSuccess.call(this);
+        }
+      } else {
+        this.$message.error((data && data.msg) || '导入失败');
+      }
+    }).catch(() => {
+      this.$message.error('导入失败');
+    });
+  };
+  input.click();
+}
 // Vue.prototype.$base = base
 Vue.use(ElementUI, { size: 'medium', zIndex: 3000 });
 Vue.config.productionTip = false

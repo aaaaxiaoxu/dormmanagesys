@@ -9,19 +9,29 @@
 			label-width="140px"
 		>
 			<template >
-				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="select" v-if="type!='info' && !ruleForm.id && $storage.get('role')!='学生'" label="选择学生" prop="selectedAllocationNo">
-					<el-select v-model="ruleForm.selectedAllocationNo" placeholder="请选择学生" filterable @change="onAllocationChange">
-						<el-option
-							v-for="item in allocationOptions"
+					<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="select" v-if="type!='info' && !ruleForm.id && $storage.get('role')!='学生'" label="选择学生" prop="selectedAllocationNo">
+						<el-select v-model="ruleForm.selectedAllocationNo" placeholder="请选择学生" filterable @change="onAllocationChange">
+							<el-option
+								v-for="item in allocationOptions"
 							:key="item.value"
 							:label="item.label"
 							:value="item.value">
-						</el-option>
-					</el-select>
-				</el-form-item>
-				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="input" v-if="type!='info'"  label="标题" prop="biaoti">
-					<el-input v-model="ruleForm.biaoti" placeholder="标题" clearable  :readonly="ro.biaoti"></el-input>
-				</el-form-item>
+							</el-option>
+						</el-select>
+					</el-form-item>
+					<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="select" v-if="type!='info'" label="维修类型">
+						<el-select v-model="selectedRepairType" placeholder="请选择维修类型" filterable clearable @change="onRepairTypeChange">
+							<el-option v-for="item in repairTypeOptions" :key="item.type" :label="item.type" :value="item.type"></el-option>
+						</el-select>
+					</el-form-item>
+					<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="select" v-if="type!='info' && selectedRepairType" label="常见问题">
+						<el-select v-model="selectedRepairIssue" placeholder="请选择常见问题" filterable clearable @change="onRepairIssueChange">
+							<el-option v-for="item in currentRepairIssues" :key="item" :label="item" :value="item"></el-option>
+						</el-select>
+					</el-form-item>
+					<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="input" v-if="type!='info'"  label="标题" prop="biaoti">
+						<el-input v-model="ruleForm.biaoti" placeholder="标题" clearable  :readonly="ro.biaoti"></el-input>
+					</el-form-item>
 				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-else class="input" label="标题" prop="biaoti">
 					<el-input v-model="ruleForm.biaoti" placeholder="标题" readonly></el-input>
 				</el-form-item>
@@ -185,10 +195,19 @@ export default {
 			callback();
 		};
 		return {
-			id: '',
-			type: '',
-			allocationOptions: [],
-			allocationOptionsRaw: [],
+				id: '',
+				type: '',
+				selectedRepairType: '',
+				selectedRepairIssue: '',
+				allocationOptions: [],
+				allocationOptionsRaw: [],
+				repairTypeOptions: [
+					{ type: "水电", issues: ["灯具不亮", "插座无电", "水龙头漏水", "下水堵塞"] },
+					{ type: "门窗", issues: ["门锁损坏", "窗户无法关闭", "门把手松动", "纱窗破损"] },
+					{ type: "家具", issues: ["床板损坏", "桌椅损坏", "衣柜门脱落", "床梯松动"] },
+					{ type: "网络", issues: ["网络不通", "网口损坏", "信号弱", "路由设备异常"] },
+					{ type: "公共设施", issues: ["空调异常", "风扇故障", "消防设施异常", "公共照明损坏"] }
+				],
 			
 			
 			ro:{
@@ -262,20 +281,40 @@ export default {
 		};
 	},
 	props: ["parent"],
-	computed: {
-
-
-
-	},
+		computed: {
+			currentRepairIssues() {
+				const option = this.repairTypeOptions.find(item => item.type === this.selectedRepairType);
+				return option ? option.issues : [];
+			}
+		},
     components: {
     },
 	created() {
 		this.ruleForm.weixiuriqi = this.getCurDate()
 	},
-	methods: {
-		onAllocationChange(value) {
-			const allocation = this.allocationOptionsRaw.find(item => item.xueshengxuehao === value);
-			if (!allocation) {
+		methods: {
+			onRepairTypeChange() {
+				this.selectedRepairIssue = "";
+				if (this.selectedRepairType && !this.ruleForm.biaoti) {
+					this.ruleForm.biaoti = `${this.selectedRepairType}报修`;
+				}
+			},
+			onRepairIssueChange(issue) {
+				if (!issue) {
+					return;
+				}
+				this.ruleForm.biaoti = `${this.selectedRepairType}-${issue}`;
+				const dormText = [this.ruleForm.susheloudong, this.ruleForm.fangjianhao].filter(Boolean).join(" ");
+				this.ruleForm.weixiuneirong = [
+					`<p>维修类型：${this.selectedRepairType}</p>`,
+					`<p>常见问题：${issue}</p>`,
+					`<p>宿舍位置：${dormText || "待系统回填"}</p>`,
+					`<p>补充说明：请描述故障发生时间、影响范围和是否存在安全隐患。</p>`
+				].join("");
+			},
+			onAllocationChange(value) {
+				const allocation = this.allocationOptionsRaw.find(item => item.xueshengxuehao === value);
+				if (!allocation) {
 				return;
 			}
 			this.fillDormInfo(allocation);

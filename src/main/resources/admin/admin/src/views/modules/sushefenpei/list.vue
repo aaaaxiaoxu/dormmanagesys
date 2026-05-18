@@ -25,6 +25,7 @@
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('sushefenpei','新增')" type="success" @click="addOrUpdateHandler()">新增</el-button>
+					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#6bbf7b,#8ccf65)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('sushefenpei','新增') && !isStudentView" type="success" icon="el-icon-magic-stick" @click="openAutoAssignDialog()">一键分配</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('sushefenpei','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
 
@@ -145,6 +146,123 @@
 		<weishengxinxi-cross-add-or-update v-if="weishengxinxiCrossAddOrUpdateFlag" :parent="this" ref="weishengxinxiCrossaddOrUpdate"></weishengxinxi-cross-add-or-update>
 		<kaoqinxinxi-cross-add-or-update v-if="kaoqinxinxiCrossAddOrUpdateFlag" :parent="this" ref="kaoqinxinxiCrossaddOrUpdate"></kaoqinxinxi-cross-add-or-update>
 
+		<el-dialog
+			title="一键分配宿舍"
+			:visible.sync="autoAssignDialogVisible"
+			width="980px"
+			class="auto-assign-dialog"
+			append-to-body
+		>
+			<el-alert
+				title="系统会按筛选条件自动匹配未分配学生和空余床位，预览不会写入数据。确认分配后会生成入住记录并同步宿舍人数。"
+				type="success"
+				:closable="false"
+				show-icon
+			></el-alert>
+			<el-form class="auto-assign-form" :model="autoAssignForm" label-width="86px">
+				<el-row :gutter="16">
+					<el-col :span="8">
+						<el-form-item label="班级">
+							<el-select v-model="autoAssignForm.banji" filterable clearable placeholder="全部班级">
+								<el-option v-for="item in autoAssignOptions.banji" :key="item" :label="item" :value="item"></el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+					<el-col :span="8">
+						<el-form-item label="专业">
+							<el-select v-model="autoAssignForm.zhuanye" filterable clearable placeholder="全部专业">
+								<el-option v-for="item in autoAssignOptions.zhuanye" :key="item" :label="item" :value="item"></el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+					<el-col :span="8">
+						<el-form-item label="性别">
+							<el-select v-model="autoAssignForm.xingbie" clearable placeholder="全部性别" @change="autoAssignGenderChange">
+								<el-option v-for="item in autoAssignOptions.xingbie" :key="item" :label="item" :value="item"></el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+					<el-col :span="8">
+						<el-form-item label="宿舍类型">
+							<el-select v-model="autoAssignForm.susheleixing" filterable clearable placeholder="全部类型" @change="autoAssignDormTypeChange">
+								<el-option v-for="item in autoAssignOptions.susheleixing" :key="item" :label="item" :value="item"></el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+					<el-col :span="8">
+						<el-form-item label="楼栋">
+							<el-select v-model="autoAssignForm.susheloudong" filterable clearable placeholder="全部楼栋">
+								<el-option v-for="item in autoAssignOptions.susheloudong" :key="item" :label="item" :value="item"></el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+					<el-col :span="8">
+						<el-form-item label="房间号">
+							<el-select v-model="autoAssignForm.fangjianhao" filterable clearable placeholder="全部房间">
+								<el-option v-for="item in autoAssignOptions.fangjianhao" :key="item" :label="item" :value="item"></el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+					<el-col :span="8">
+						<el-form-item label="学生学号">
+							<el-input v-model="autoAssignForm.xueshengxuehao" clearable placeholder="可输入学号关键词"></el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="8">
+						<el-form-item label="学生姓名">
+							<el-input v-model="autoAssignForm.xueshengxingming" clearable placeholder="可输入姓名关键词"></el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="8">
+						<el-form-item label="宿舍名称">
+							<el-select v-model="autoAssignForm.sushemingcheng" filterable clearable placeholder="全部宿舍">
+								<el-option v-for="item in autoAssignOptions.sushemingcheng" :key="item" :label="item" :value="item"></el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+				</el-row>
+			</el-form>
+			<div v-if="autoAssignResult" class="auto-assign-summary">
+				<div class="summary-card">
+					<span>可分配</span>
+					<strong>{{autoAssignResult.successCount || 0}}</strong>
+				</div>
+				<div class="summary-card">
+					<span>跳过/失败</span>
+					<strong>{{autoAssignResult.failedCount || 0}}</strong>
+				</div>
+				<div class="summary-card">
+					<span>模式</span>
+					<strong>{{autoAssignResult.previewOnly ? '预览' : '已执行'}}</strong>
+				</div>
+			</div>
+			<el-tabs v-if="autoAssignResult" class="auto-assign-tabs">
+				<el-tab-pane :label="'预览分配 ' + (autoAssignResult.successCount || 0)">
+					<el-table :data="autoAssignResult.successList || []" height="260" stripe border>
+						<el-table-column prop="xueshengxuehao" label="学号" width="130"></el-table-column>
+						<el-table-column prop="xueshengxingming" label="姓名" width="120"></el-table-column>
+						<el-table-column prop="sushemingcheng" label="宿舍名称"></el-table-column>
+						<el-table-column prop="susheloudong" label="楼栋" width="110"></el-table-column>
+						<el-table-column prop="fangjianhao" label="房间号" width="110"></el-table-column>
+						<el-table-column prop="chuangweihao" label="床位号" width="110"></el-table-column>
+					</el-table>
+				</el-tab-pane>
+				<el-tab-pane :label="'未分配原因 ' + (autoAssignResult.failedCount || 0)">
+					<el-table :data="autoAssignResult.failedList || []" height="260" stripe border>
+						<el-table-column prop="xueshengxuehao" label="学号" width="130"></el-table-column>
+						<el-table-column prop="xueshengxingming" label="姓名" width="120"></el-table-column>
+						<el-table-column prop="reason" label="原因"></el-table-column>
+					</el-table>
+				</el-tab-pane>
+			</el-tabs>
+			<span slot="footer" class="dialog-footer">
+				<el-button @click="autoAssignDialogVisible = false">关闭</el-button>
+				<el-button @click="resetAutoAssignForm">重置条件</el-button>
+				<el-button type="primary" icon="el-icon-view" :loading="autoAssignLoading" @click="previewAutoAssign">生成预览</el-button>
+				<el-button type="success" icon="el-icon-check" :loading="autoAssignExecuting" :disabled="!autoAssignResult || !autoAssignResult.successCount" @click="executeAutoAssign">确认分配</el-button>
+			</span>
+		</el-dialog>
+
 
 
 
@@ -176,6 +294,33 @@ export default {
       totalPage: 0,
       dataListLoading: false,
       dataListSelections: [],
+      autoAssignDialogVisible: false,
+      autoAssignLoading: false,
+      autoAssignExecuting: false,
+      autoAssignStudents: [],
+      autoAssignDorms: [],
+      autoAssignForm: {
+        banji: '',
+        zhuanye: '',
+        xingbie: '',
+        sushemingcheng: '',
+        susheleixing: '',
+        susheloudong: '',
+        fangjianhao: '',
+        xueshengxuehao: '',
+        xueshengxingming: ''
+      },
+      autoAssignOptions: {
+        banji: [],
+        zhuanye: [],
+        xingbie: ['男', '女'],
+        sushemingcheng: [],
+        susheleixing: [],
+        susheloudong: [],
+        fangjianhao: []
+      },
+      autoAssignResult: null,
+      autoAssignPreviewKey: '',
       showFlag: true,
       sfshVisiable: false,
       shForm: {},
@@ -442,6 +587,136 @@ export default {
       this.pageIndex = 1;
       this.getDataList();
     },
+    openAutoAssignDialog() {
+      this.autoAssignDialogVisible = true;
+      this.autoAssignResult = null;
+      this.autoAssignPreviewKey = '';
+      this.loadAutoAssignOptions();
+    },
+    loadAutoAssignOptions() {
+      Promise.all([
+        this.$http({
+          url: "xuesheng/list",
+          method: "get",
+          params: {
+            page: 1,
+            limit: 1000
+          }
+        }),
+        this.$http({
+          url: "sushexinxi/list",
+          method: "get",
+          params: {
+            page: 1,
+            limit: 1000,
+            sort: "susheloudong",
+            order: "asc"
+          }
+        })
+      ]).then(([studentRes, dormRes]) => {
+        this.autoAssignStudents = studentRes.data && studentRes.data.code === 0 ? (studentRes.data.data.list || []) : [];
+        this.autoAssignDorms = dormRes.data && dormRes.data.code === 0 ? (dormRes.data.data.list || []) : [];
+        this.refreshAutoAssignOptions();
+      });
+    },
+    refreshAutoAssignOptions() {
+      this.autoAssignOptions.banji = this.getUniqueValues(this.autoAssignStudents, "banji");
+      this.autoAssignOptions.zhuanye = this.getUniqueValues(this.autoAssignStudents, "zhuanye");
+      this.autoAssignOptions.sushemingcheng = this.getUniqueValues(this.autoAssignDorms, "sushemingcheng");
+      this.autoAssignOptions.susheleixing = this.getUniqueValues(this.autoAssignDorms, "susheleixing");
+      this.autoAssignOptions.susheloudong = this.getUniqueValues(this.autoAssignDorms, "susheloudong");
+      this.autoAssignOptions.fangjianhao = this.getUniqueValues(this.autoAssignDorms, "fangjianhao");
+    },
+    getUniqueValues(list, key) {
+      return Array.from(new Set((list || []).map(item => item[key]).filter(item => item)));
+    },
+    autoAssignGenderChange() {
+      if (!this.autoAssignForm.xingbie || this.autoAssignForm.susheleixing) {
+        return;
+      }
+      const matchedType = this.autoAssignOptions.susheleixing.find(item => String(item).indexOf(this.autoAssignForm.xingbie) !== -1);
+      if (matchedType) {
+        this.autoAssignForm.susheleixing = matchedType;
+      }
+    },
+    autoAssignDormTypeChange() {
+      if (!this.autoAssignForm.susheleixing || this.autoAssignForm.xingbie) {
+        return;
+      }
+      if (String(this.autoAssignForm.susheleixing).indexOf("男") !== -1) {
+        this.autoAssignForm.xingbie = "男";
+      } else if (String(this.autoAssignForm.susheleixing).indexOf("女") !== -1) {
+        this.autoAssignForm.xingbie = "女";
+      }
+    },
+    resetAutoAssignForm() {
+      this.autoAssignForm = {
+        banji: '',
+        zhuanye: '',
+        xingbie: '',
+        sushemingcheng: '',
+        susheleixing: '',
+        susheloudong: '',
+        fangjianhao: '',
+        xueshengxuehao: '',
+        xueshengxingming: ''
+      };
+      this.autoAssignResult = null;
+      this.autoAssignPreviewKey = '';
+    },
+    buildAutoAssignPayload(previewOnly) {
+      return Object.assign({}, this.autoAssignForm, {
+        previewOnly: previewOnly
+      });
+    },
+    getAutoAssignFormKey() {
+      return JSON.stringify(this.buildAutoAssignPayload(true));
+    },
+    previewAutoAssign() {
+      this.submitAutoAssign(true);
+    },
+    executeAutoAssign() {
+      if (this.autoAssignPreviewKey !== this.getAutoAssignFormKey()) {
+        this.$message.warning("筛选条件已变更，请重新生成预览后再确认分配");
+        return;
+      }
+      this.$confirm("确认按照当前预览结果写入入住分配记录吗？", "确认分配", {
+        confirmButtonText: "确认分配",
+        cancelButtonText: "取消",
+        type: "warning"
+      }).then(() => {
+        this.submitAutoAssign(false);
+      });
+    },
+    submitAutoAssign(previewOnly) {
+      if (previewOnly) {
+        this.autoAssignLoading = true;
+      } else {
+        this.autoAssignExecuting = true;
+      }
+      this.$http({
+        url: "sushefenpei/autoAssign",
+        method: "post",
+        data: this.buildAutoAssignPayload(previewOnly)
+      }).then(({ data }) => {
+        if (data && data.code === 0) {
+          this.autoAssignResult = data;
+          this.autoAssignPreviewKey = previewOnly ? this.getAutoAssignFormKey() : '';
+          this.$message.success(data.msg || "操作成功");
+          if (!previewOnly) {
+            this.getDataList();
+          }
+        } else {
+          this.$message.error(data.msg || "操作失败");
+        }
+        this.autoAssignLoading = false;
+        this.autoAssignExecuting = false;
+      }).catch(() => {
+        this.autoAssignLoading = false;
+        this.autoAssignExecuting = false;
+        this.$message.error("一键分配请求失败");
+      });
+    },
 
     // 获取数据列表
     getDataList() {
@@ -565,6 +840,66 @@ export default {
 
 	.allocation-tip {
 		background: linear-gradient(135deg, rgba(244, 246, 239, 0.98), rgba(232, 236, 224, 0.94));
+	}
+
+	.auto-assign-dialog ::v-deep .el-dialog {
+		border-radius: 14px;
+		overflow: hidden;
+	}
+
+	.auto-assign-dialog ::v-deep .el-dialog__header {
+		background: linear-gradient(135deg, #eff8e8, #e6f7f1);
+		border-bottom: 1px solid rgba(114, 177, 94, 0.22);
+	}
+
+	.auto-assign-dialog ::v-deep .el-dialog__title {
+		color: #315a3a;
+		font-size: 18px;
+		font-weight: 700;
+	}
+
+	.auto-assign-form {
+		margin-top: 18px;
+		padding: 18px 18px 2px;
+		border-radius: 12px;
+		background: #fbfef8;
+		border: 1px solid rgba(137, 195, 112, 0.22);
+	}
+
+	.auto-assign-form ::v-deep .el-select,
+	.auto-assign-form ::v-deep .el-input {
+		width: 100%;
+	}
+
+	.auto-assign-summary {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 12px;
+		margin: 16px 0 8px;
+	}
+
+	.summary-card {
+		padding: 14px 16px;
+		border-radius: 10px;
+		background: linear-gradient(135deg, #f7fbe9, #ecf9f3);
+		border: 1px solid rgba(102, 166, 87, 0.22);
+	}
+
+	.summary-card span {
+		display: block;
+		color: #6f8064;
+		font-size: 13px;
+		margin-bottom: 6px;
+	}
+
+	.summary-card strong {
+		color: #315a3a;
+		font-size: 24px;
+		line-height: 1;
+	}
+
+	.auto-assign-tabs ::v-deep .el-tabs__item {
+		font-size: 15px;
 	}
 	
 	.center-form-pv {

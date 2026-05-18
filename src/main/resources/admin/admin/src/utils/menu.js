@@ -109,6 +109,17 @@ const menu = {
           {
             child: [
               {
+                appFrontIcon: "cuIcon-rank",
+                buttons: ["查看"],
+                menu: "运营总览",
+                tableName: "analysis",
+              },
+            ],
+            menu: "数据分析",
+          },
+          {
+            child: [
+              {
                 appFrontIcon: "cuIcon-group",
                 buttons: ["新增", "查看", "修改", "删除"],
                 menu: "宿舍论坛",
@@ -217,6 +228,17 @@ const menu = {
               },
             ],
             menu: "事务处理",
+          },
+          {
+            child: [
+              {
+                appFrontIcon: "cuIcon-rank",
+                buttons: ["查看"],
+                menu: "楼栋运营分析",
+                tableName: "analysis",
+              },
+            ],
+            menu: "数据分析",
           },
           {
             child: [

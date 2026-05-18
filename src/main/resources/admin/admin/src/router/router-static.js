@@ -28,6 +28,7 @@ import suguan from "@/views/modules/suguan/list";
 import messages from "@/views/modules/messages/list";
 import kaoqinxinxi from "@/views/modules/kaoqinxinxi/list";
 import config from "@/views/modules/config/list";
+import analysis from "@/views/analysis";
 
 //2.配置路由   注意：名字
 const routes = [
@@ -140,6 +141,11 @@ const routes = [
         path: "/kaoqinxinxi",
         name: "考勤统计",
         component: kaoqinxinxi,
+      },
+      {
+        path: "/analysis",
+        name: "数据分析",
+        component: analysis,
       },
       {
         path: "/config",

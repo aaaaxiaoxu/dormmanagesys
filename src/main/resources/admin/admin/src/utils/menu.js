@@ -295,13 +295,13 @@ const menu = {
           },
           {
             child: [
-              {
-                appFrontIcon: "cuIcon-attentionfavor",
-                buttons: ["查看"],
-                menu: "我的门禁记录",
-                menuJump: "列表",
-                tableName: "churusushe",
-              },
+	              {
+	                appFrontIcon: "cuIcon-attentionfavor",
+	                buttons: ["查看", "新增"],
+	                menu: "门禁核验",
+	                menuJump: "列表",
+	                tableName: "churusushe",
+	              },
               {
                 appFrontIcon: "cuIcon-brand",
                 buttons: ["查看", "新增", "删除"],
@@ -346,20 +346,14 @@ const menu = {
           },
           {
             child: [
-              {
-                appFrontIcon: "cuIcon-group",
-                buttons: ["新增", "查看", "修改", "删除"],
-                menu: "宿舍论坛",
-                tableName: "forum",
-              },
-              {
-                appFrontIcon: "cuIcon-service",
-                buttons: ["查看", "新增"],
-                menu: "AI客服",
-                tableName: "messages",
-              },
-            ],
-            menu: "互动服务",
+	              {
+	                appFrontIcon: "cuIcon-group",
+	                buttons: ["新增", "查看"],
+	                menu: "宿舍论坛",
+	                tableName: "forum",
+	              },
+	            ],
+	            menu: "互动服务",
           },
         ],
         frontMenu: [],

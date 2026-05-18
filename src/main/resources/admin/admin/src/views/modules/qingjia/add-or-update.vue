@@ -8,11 +8,20 @@
 			:rules="rules"
 			label-width="140px"
 		>
-			<template >
-				
-				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="input" v-if="type!='info'"  label="标题" prop="biaoti">
-					<el-input v-model="ruleForm.biaoti" placeholder="标题" clearable  :readonly="ro.biaoti"></el-input>
-				</el-form-item>
+					<template >
+					<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="select" v-if="type!='info'" label="请假类型">
+						<el-select v-model="selectedLeaveType" placeholder="请选择请假类型" filterable clearable @change="onLeaveTypeChange">
+							<el-option v-for="item in leaveTypeOptions" :key="item.type" :label="item.type" :value="item.type"></el-option>
+						</el-select>
+					</el-form-item>
+					<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="select" v-if="type!='info' && selectedLeaveType" label="常用原因">
+						<el-select v-model="selectedLeaveReason" placeholder="请选择常用原因" filterable clearable @change="onLeaveReasonChange">
+							<el-option v-for="item in currentLeaveReasons" :key="item" :label="item" :value="item"></el-option>
+						</el-select>
+					</el-form-item>
+					<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="input" v-if="type!='info'"  label="标题" prop="biaoti">
+						<el-input v-model="ruleForm.biaoti" placeholder="标题" clearable  :readonly="ro.biaoti"></el-input>
+					</el-form-item>
 				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-else class="input" label="标题" prop="biaoti">
 					<el-input v-model="ruleForm.biaoti" placeholder="标题" readonly></el-input>
 				</el-form-item>
@@ -135,21 +144,35 @@ export default {
 				callback();
 			}
 		};
-		var validateIntNumber = (rule, value, callback) => {
-			if(!value){
-				callback();
-			} else if (!isIntNumer(value)) {
-				callback(new Error("请输入整数"));
-			} else {
-				callback();
-			}
-		};
-		return {
-			id: '',
-			type: '',
-			
-			
-			ro:{
+			var validateIntNumber = (rule, value, callback) => {
+				if(!value){
+					callback();
+				} else if (!isIntNumer(value)) {
+					callback(new Error("请输入整数"));
+				} else {
+					callback();
+				}
+			};
+			var validateLeaveContent = (rule, value, callback) => {
+				const text = String(value || "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, "").trim();
+				if(!text){
+					callback(new Error("请填写请假原因"));
+				} else {
+					callback();
+				}
+			};
+			return {
+				id: '',
+				type: '',
+				selectedLeaveType: '',
+				selectedLeaveReason: '',
+				leaveTypeOptions: [
+					{ type: "病假", reasons: ["门诊就医", "复诊检查", "身体不适需休养", "住院或陪护"] },
+					{ type: "事假", reasons: ["家庭事务", "证件办理", "校外面试", "个人紧急事务"] },
+					{ type: "公假", reasons: ["学院活动", "竞赛训练", "实习实践", "志愿服务"] },
+					{ type: "周末外出", reasons: ["回家", "探亲", "短途出行", "采购生活用品"] }
+				],
+				ro:{
 				biaoti : false,
 				xueshengxuehao : false,
 				xueshengxingming : false,
@@ -173,19 +196,26 @@ export default {
 		
 
 			
-			rules: {
-				biaoti: [
-				],
-				xueshengxuehao: [
-				],
-				xueshengxingming: [
-				],
-				qingjia1: [
-				],
-				qingjia2: [
-				],
-				qingjiayuanyin: [
-				],
+				rules: {
+					biaoti: [
+						{ required: true, message: '请输入标题', trigger: 'blur' }
+					],
+					xueshengxuehao: [
+						{ required: true, message: '学生学号不能为空', trigger: 'blur' }
+					],
+					xueshengxingming: [
+						{ required: true, message: '学生姓名不能为空', trigger: 'blur' }
+					],
+					qingjia1: [
+						{ required: true, message: '请选择离开日期', trigger: 'change' }
+					],
+					qingjia2: [
+						{ required: true, message: '请选择返回日期', trigger: 'change' }
+					],
+					qingjiayuanyin: [
+						{ validator: validateLeaveContent, trigger: 'blur' },
+						{ validator: validateLeaveContent, trigger: 'change' }
+					],
 				sfsh: [
 				],
 				shhf: [
@@ -194,20 +224,39 @@ export default {
 		};
 	},
 	props: ["parent"],
-	computed: {
-
-
-
-	},
+		computed: {
+			currentLeaveReasons() {
+				const option = this.leaveTypeOptions.find(item => item.type === this.selectedLeaveType);
+				return option ? option.reasons : [];
+			}
+		},
     components: {
     },
-	created() {
-		this.ruleForm.qingjia1 = this.getCurDateTime();
-		this.ruleForm.qingjia2 = this.getCurDateTime();
-	},
-	methods: {
-		
-		// 下载
+		created() {
+			this.ruleForm.qingjia1 = this.getCurDateTime();
+			this.ruleForm.qingjia2 = this.getCurDateTime();
+		},
+		methods: {
+			onLeaveTypeChange() {
+				this.selectedLeaveReason = "";
+				if (this.selectedLeaveType && !this.ruleForm.biaoti) {
+					this.ruleForm.biaoti = `${this.selectedLeaveType}申请`;
+				}
+			},
+			onLeaveReasonChange(reason) {
+				if (!reason) {
+					return;
+				}
+				this.ruleForm.biaoti = `${this.selectedLeaveType}-${reason}`;
+				this.ruleForm.qingjiayuanyin = [
+					`<p>请假类型：${this.selectedLeaveType}</p>`,
+					`<p>请假原因：${reason}</p>`,
+					`<p>离校时间：${this.ruleForm.qingjia1 || "待选择"}</p>`,
+					`<p>返校时间：${this.ruleForm.qingjia2 || "待选择"}</p>`,
+					`<p>补充说明：请填写外出去向、联系方式和安全承诺。</p>`
+				].join("");
+			},
+				// 下载
 		download(file){
 			window.open(`${file}`)
 		},

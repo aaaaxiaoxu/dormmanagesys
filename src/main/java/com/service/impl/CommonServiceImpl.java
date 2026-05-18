@@ -61,4 +61,9 @@ public class CommonServiceImpl implements CommonService {
 		return commonDao.selectTimeStatValue(params);
 	}
 
+	@Override
+	public List<Map<String, Object>> selectExportRows(Map<String, Object> params) {
+		return commonDao.selectExportRows(params);
+	}
+
 }

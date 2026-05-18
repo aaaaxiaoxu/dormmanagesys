@@ -3,16 +3,23 @@ package com.controller;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,10 +50,121 @@ public class CommonController{
 	@Autowired
 	private CommonService commonService;
 
+	private static final Map<String, ExportDefinition> EXPORT_DEFINITIONS = buildExportDefinitions();
+
     private static AipFace client = null;
     
     @Autowired
     private ConfigService configService;    
+
+	private static Map<String, ExportDefinition> buildExportDefinitions() {
+		Map<String, ExportDefinition> definitions = new LinkedHashMap<String, ExportDefinition>();
+		definitions.put("xuesheng", new ExportDefinition("学生信息",
+				new String[]{"xueshengxuehao", "xueshengxingming", "xingbie", "xueshengdianhua", "banji", "zhuanye"},
+				new String[]{"学生学号", "学生姓名", "性别", "学生电话", "班级", "专业"}));
+		definitions.put("sushexinxi", new ExportDefinition("宿舍信息",
+				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "kezhurenshu", "yizhurenshu", "youchuangwei"},
+				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "可住人数", "已住人数", "有床位"}));
+		definitions.put("sushefenpei", new ExportDefinition("宿舍分配",
+				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "xueshengxuehao", "xueshengxingming", "chuangweihao", "fenpeiriqi", "beizhu"},
+				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "学生学号", "学生姓名", "床位号", "分配日期", "备注"}));
+		definitions.put("qingjia", new ExportDefinition("请假记录",
+				new String[]{"biaoti", "xueshengxuehao", "xueshengxingming", "qingjia1", "qingjia2", "qingjiayuanyin", "sfsh", "shhf"},
+				new String[]{"标题", "学生学号", "学生姓名", "离开日期", "返回日期", "请假原因", "审核状态", "审核回复"}));
+		definitions.put("churusushe", new ExportDefinition("门禁出入",
+				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "xueshengxuehao", "xueshengxingming", "churushijian", "xiangpian"},
+				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "学生学号", "学生姓名", "通行时间", "现场照片"}));
+		definitions.put("weishengxinxi", new ExportDefinition("卫生检查",
+				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "xueshengxuehao", "xueshengxingming", "weishengqingkuang", "pingfen", "dengjiriqi", "xiangqing", "sfsh", "shhf"},
+				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "学生学号", "学生姓名", "卫生情况", "评分", "登记日期", "检查评语", "审核状态", "审核回复"}));
+		definitions.put("weixiuxinxi", new ExportDefinition("报修工单",
+				new String[]{"biaoti", "sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "xueshengxuehao", "xueshengxingming", "weixiuriqi", "weixiuneirong", "sfsh", "shhf"},
+				new String[]{"标题", "宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "学生学号", "学生姓名", "维修日期", "维修内容", "工单状态", "处理备注"}));
+		definitions.put("kaoqinxinxi", new ExportDefinition("考勤统计",
+				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "yuefen", "xueshengxuehao", "xueshengxingming", "wanguitianshu", "queqintianshu", "qingjiatianshu", "dengjishijian", "beizhu"},
+				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "月份", "学生学号", "学生姓名", "晚归天数", "未归天数", "请假天数", "登记时间", "违纪/处理备注"}));
+		return definitions;
+	}
+
+	private static class ExportDefinition {
+		private String title;
+		private String[] columns;
+		private String[] labels;
+
+		private ExportDefinition(String title, String[] columns, String[] labels) {
+			this.title = title;
+			this.columns = columns;
+			this.labels = labels;
+		}
+	}
+
+	/**
+	 * 白名单数据导出
+	 */
+	@RequestMapping("/export/{tableName}")
+	public void exportTable(@PathVariable("tableName") String tableName, HttpServletResponse response) throws IOException {
+		ExportDefinition definition = EXPORT_DEFINITIONS.get(tableName);
+		if(definition == null) {
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			response.setContentType("application/json;charset=UTF-8");
+			response.getWriter().write("{\"code\":500,\"msg\":\"暂不支持导出该数据表\"}");
+			return;
+		}
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("table", tableName);
+		params.put("columns", StringUtils.join(definition.columns, ","));
+		List<Map<String, Object>> rows = commonService.selectExportRows(params);
+		HSSFWorkbook workbook = buildWorkbook(definition, rows);
+		String filename = URLEncoder.encode(definition.title + "-" + new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".xls", "UTF-8").replace("+", "%20");
+		response.setContentType("application/vnd.ms-excel;charset=UTF-8");
+		response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + filename);
+		workbook.write(response.getOutputStream());
+		response.flushBuffer();
+	}
+
+	private HSSFWorkbook buildWorkbook(ExportDefinition definition, List<Map<String, Object>> rows) {
+		HSSFWorkbook workbook = new HSSFWorkbook();
+		HSSFSheet sheet = workbook.createSheet(definition.title);
+		HSSFRow header = sheet.createRow(0);
+		for(int i = 0; i < definition.labels.length; i++) {
+			HSSFCell cell = header.createCell(i);
+			cell.setCellValue(definition.labels[i]);
+		}
+		SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		for(int i = 0; i < rows.size(); i++) {
+			HSSFRow row = sheet.createRow(i + 1);
+			Map<String, Object> data = rows.get(i);
+			for(int j = 0; j < definition.columns.length; j++) {
+				HSSFCell cell = row.createCell(j);
+				Object value = getColumnValue(data, definition.columns[j]);
+				if(value instanceof Date) {
+					cell.setCellValue(dateTimeFormat.format((Date) value));
+				} else {
+					cell.setCellValue(value == null ? "" : String.valueOf(value).replaceAll("<[^>]+>", "").replace("&nbsp;", " "));
+				}
+			}
+		}
+		for(int i = 0; i < definition.labels.length; i++) {
+			sheet.autoSizeColumn(i);
+		}
+		return workbook;
+	}
+
+	private Object getColumnValue(Map<String, Object> row, String column) {
+		if(row == null) {
+			return null;
+		}
+		if(row.containsKey(column)) {
+			return row.get(column);
+		}
+		for(String key : row.keySet()) {
+			if(column.equalsIgnoreCase(key)) {
+				return row.get(key);
+			}
+		}
+		return null;
+	}
+
 	/**
 	 * 获取table表中的column列表(联动接口)
 	 * @param table

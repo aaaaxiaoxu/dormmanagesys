@@ -38,6 +38,24 @@
           <el-input v-model="ruleForm.zhuanye" placeholder="专业" clearable></el-input>
         </el-form-item>
         <el-form-item :style='{ "width": "100%", "margin": "0 0 20px 0", "display": "inline-block" }' v-if="flag == 'xuesheng'"
+          label="人脸档案">
+          <div class="face-archive">
+            <div class="face-preview" :class="{ empty: !faceArchiveUrl }">
+              <img v-if="faceArchiveUrl" :src="faceArchiveUrl">
+              <i v-else class="el-icon-user"></i>
+            </div>
+            <div class="face-info">
+              <div class="face-title">
+                <span>门禁核验照片</span>
+                <el-tag :type="faceArchiveUrl ? 'success' : 'warning'" size="small">{{ faceArchiveUrl ? '已建档' : '未建档' }}</el-tag>
+              </div>
+              <el-button
+                :style='{ "border": "0", "cursor": "pointer", "padding": "0 18px", "margin": "12px 0 0", "outline": "none", "color": "#fff", "borderRadius": "40px", "background": "linear-gradient(135deg,#5fb98a,#86cc6a)", "width": "128px", "lineHeight": "36px", "fontSize": "14px", "height": "36px" }'
+                type="primary" icon="el-icon-camera" @click="registerFaceHandler">{{ faceArchiveUrl ? '重新建档' : '拍照建档' }}</el-button>
+            </div>
+          </div>
+        </el-form-item>
+        <el-form-item :style='{ "width": "100%", "margin": "0 0 20px 0", "display": "inline-block" }' v-if="flag == 'xuesheng'"
           label="宿舍楼栋">
           <el-input v-model="studentDorm.susheloudong" readonly placeholder="暂未分配宿舍"></el-input>
         </el-form-item>
@@ -78,10 +96,6 @@
           <el-button
             :style='{ "border": "0", "cursor": "pointer", "padding": "0", "margin": "0 20px 0 0", "outline": "none", "color": "rgba(255, 255, 255, 1)", "borderRadius": "40px", "background": "rgba(78, 106, 226, 1)", "width": "128px", "lineHeight": "40px", "fontSize": "14px", "height": "40px" }'
             type="primary" @click="onUpdateHandler">修 改</el-button>
-          <el-button
-            v-if="flag == 'xuesheng'"
-            :style='{ "border": "0", "cursor": "pointer", "padding": "0", "margin": "0", "outline": "none", "color": "rgba(255, 255, 255, 1)", "borderRadius": "40px", "background": "rgba(121, 139, 121, 1)", "width": "128px", "lineHeight": "40px", "fontSize": "14px", "height": "40px" }'
-            type="primary" @click="registerFaceHandler">录入人脸</el-button>
         </el-form-item>
       </el-row>
     </el-form>
@@ -97,19 +111,40 @@ export default {
   components: {
     imgAdd,
   },
-  data() {
-    return {
-      ruleForm: {},
+	  data() {
+	    return {
+	      ruleForm: {},
       studentDorm: {
         susheloudong: '',
         fangjianhao: '',
       },
       flag: '',
       usersFlag: false,
-      xingbieOptions: [],
-    };
-  },
-  mounted() {
+	      xingbieOptions: [],
+	    };
+	  },
+    computed: {
+      faceArchivePath() {
+        if (!this.ruleForm || !this.ruleForm.touxiang) {
+          return '';
+        }
+        const path = String(this.ruleForm.touxiang).split(',')[0] || '';
+        if (path.substring(0, 4) === 'http') {
+          return path;
+        }
+        return path.replace(new RegExp(this.$base.url, "g"), "").replace(/^\/+/, '');
+      },
+      faceArchiveUrl() {
+        if (!this.faceArchivePath) {
+          return '';
+        }
+        if (this.faceArchivePath.substring(0, 4) === 'http') {
+          return this.faceArchivePath;
+        }
+        return this.$base.url + this.faceArchivePath;
+      }
+    },
+	  mounted() {
     var table = this.$storage.get("sessionTable");
     this.flag = table;
     this.$http({
@@ -128,18 +163,30 @@ export default {
     this.xingbieOptions = "男,女".split(',')
   },
   methods: {
-    normalizeUploadPath(path) {
-      if (!path) {
-        return '';
-      }
-      return String(path)
+	    normalizeUploadPath(path) {
+	      if (!path) {
+	        return '';
+	      }
+	      return String(path)
         .replace(new RegExp(this.$base.url, "g"), "")
-        .replace(/^\/+/, '')
-        .replace(/^upload\//, '');
-    },
-    touxiangUploadChange(fileUrls) {
-      this.ruleForm.touxiang = fileUrls;
-    },
+	        .replace(/^\/+/, '')
+	        .replace(/^upload\//, '');
+	    },
+      archivePathFromUpload(path) {
+        if (!path) {
+          return '';
+        }
+        const cleanPath = String(path)
+          .replace(new RegExp(this.$base.url, "g"), "")
+          .replace(/^\/+/, '');
+        if (!cleanPath || cleanPath.substring(0, 4) === 'http' || cleanPath.indexOf('upload/') === 0) {
+          return cleanPath;
+        }
+        return `upload/${cleanPath}`;
+      },
+	    touxiangUploadChange(fileUrls) {
+	      this.ruleForm.touxiang = fileUrls;
+	    },
     registerFaceHandler() {
       if (this.flag !== 'xuesheng') {
         return;
@@ -152,24 +199,46 @@ export default {
         this.$message.error("未获取到人脸照片，请重新拍照");
         return;
       }
-      this.$http({
-        url: `registerFace`,
-        method: "post",
-        params: {
-          face,
+	      this.$http({
+	        url: `registerFace`,
+	        method: "post",
+	        params: {
+	          face,
+	        }
+	      }).then(({ data }) => {
+	        if (data && data.code === 0) {
+            this.saveFaceArchive(face);
+	        } else {
+	          this.$message.error((data && data.msg) || "人脸录入失败");
+	        }
+	      });
+	    },
+      saveFaceArchive(face) {
+        const archivePath = this.archivePathFromUpload(face);
+        if (!archivePath) {
+          this.$message.error("人脸档案照片保存失败");
+          return;
         }
-      }).then(({ data }) => {
-        if (data && data.code === 0) {
-          this.$message({
-            message: "人脸录入成功",
-            type: "success",
-            duration: 1500
-          });
-        } else {
-          this.$message.error((data && data.msg) || "人脸录入失败");
-        }
-      });
-    },
+        const payload = Object.assign({}, this.ruleForm, {
+          touxiang: archivePath
+        });
+        this.$http({
+          url: `xuesheng/update`,
+          method: "post",
+          data: payload
+        }).then(({ data }) => {
+          if (data && data.code === 0) {
+            this.ruleForm.touxiang = archivePath;
+            this.$message({
+              message: "人脸档案已更新",
+              type: "success",
+              duration: 1500
+            });
+          } else {
+            this.$message.error((data && data.msg) || "人脸档案保存失败");
+          }
+        });
+      },
     loadStudentDorm() {
       this.$http({
         url: `sushefenpei/list`,
@@ -357,14 +426,61 @@ export default {
   height: 150px;
 }
 
-.add-update-preview .el-textarea ::v-deep .el-textarea__inner {
-  border: 2px solid #797979;
-  border-radius: 4px;
-  padding: 12px;
-  outline: none;
+	.add-update-preview .el-textarea ::v-deep .el-textarea__inner {
+	  border: 2px solid #797979;
+	  border-radius: 4px;
+	  padding: 12px;
+	  outline: none;
   color: #333;
   width: 400px;
-  font-size: 14px;
-  height: 120px;
-}
-</style>
+	  font-size: 14px;
+	  height: 120px;
+	}
+
+  .face-archive {
+    align-items: center;
+    background: #f6fff8;
+    border: 1px solid #d8efd5;
+    border-radius: 8px;
+    display: flex;
+    gap: 16px;
+    padding: 14px 16px;
+    width: 420px;
+  }
+
+  .face-preview {
+    align-items: center;
+    background: #fff;
+    border: 1px solid #c8e5cd;
+    border-radius: 8px;
+    display: flex;
+    height: 96px;
+    justify-content: center;
+    overflow: hidden;
+    width: 96px;
+  }
+
+  .face-preview img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  .face-preview.empty {
+    color: #86b78e;
+    font-size: 34px;
+  }
+
+  .face-info {
+    min-width: 0;
+  }
+
+  .face-title {
+    align-items: center;
+    color: #2f5339;
+    display: flex;
+    font-size: 16px;
+    font-weight: 600;
+    gap: 10px;
+  }
+	</style>

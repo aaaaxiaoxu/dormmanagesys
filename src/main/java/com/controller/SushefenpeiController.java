@@ -170,6 +170,7 @@ public class SushefenpeiController {
     public R save(@RequestBody SushefenpeiEntity sushefenpei, HttpServletRequest request){
     	sushefenpei.setId(new Date().getTime()+new Double(Math.floor(Math.random()*1000)).longValue());
     	//ValidatorUtils.validateEntity(sushefenpei);
+        normalizeAllocationBedNo(sushefenpei);
         String validateMsg = validateAllocation(sushefenpei);
         if(StringUtils.isNotBlank(validateMsg)) {
             return R.error(validateMsg);
@@ -186,6 +187,7 @@ public class SushefenpeiController {
     public R add(@RequestBody SushefenpeiEntity sushefenpei, HttpServletRequest request){
     	sushefenpei.setId(new Date().getTime()+new Double(Math.floor(Math.random()*1000)).longValue());
     	//ValidatorUtils.validateEntity(sushefenpei);
+        normalizeAllocationBedNo(sushefenpei);
         String validateMsg = validateAllocation(sushefenpei);
         if(StringUtils.isNotBlank(validateMsg)) {
             return R.error(validateMsg);
@@ -205,6 +207,7 @@ public class SushefenpeiController {
     public R update(@RequestBody SushefenpeiEntity sushefenpei, HttpServletRequest request){
         SushefenpeiEntity oldData = sushefenpeiService.selectById(sushefenpei.getId());
         //ValidatorUtils.validateEntity(sushefenpei);
+        normalizeAllocationBedNo(sushefenpei);
         String validateMsg = validateAllocation(sushefenpei);
         if(StringUtils.isNotBlank(validateMsg)) {
             return R.error(validateMsg);
@@ -390,7 +393,7 @@ public class SushefenpeiController {
             if(allocations != null) {
                 for(SushefenpeiEntity allocation : allocations) {
                     if(StringUtils.isNotBlank(allocation.getChuangweihao())) {
-                        beds.add(allocation.getChuangweihao());
+                        beds.add(normalizeBedNo(allocation.getChuangweihao()));
                     }
                 }
             }
@@ -414,8 +417,8 @@ public class SushefenpeiController {
         }
         Set<String> beds = occupiedBeds == null ? new HashSet<String>() : occupiedBeds;
         for(int i = 1; i <= capacity; i++) {
-            String bedNo = String.valueOf(i);
-            if(!beds.contains(bedNo)) {
+            String bedNo = formatBedNo(i);
+            if(!beds.contains(normalizeBedNo(bedNo))) {
                 return bedNo;
             }
         }
@@ -492,6 +495,7 @@ public class SushefenpeiController {
         if(StringUtils.isBlank(sushefenpei.getChuangweihao())) {
             return "请选择床位号";
         }
+        normalizeAllocationBedNo(sushefenpei);
 
         EntityWrapper<XueshengEntity> studentInfoWrapper = new EntityWrapper<XueshengEntity>();
         studentInfoWrapper.eq("xueshengxuehao", sushefenpei.getXueshengxuehao());
@@ -527,18 +531,85 @@ public class SushefenpeiController {
             return "该学生已分配宿舍，请使用修改功能进行换宿或换床";
         }
 
-        EntityWrapper<SushefenpeiEntity> bedWrapper = new EntityWrapper<SushefenpeiEntity>();
-        bedWrapper.eq("sushemingcheng", sushefenpei.getSushemingcheng());
-        bedWrapper.eq("susheloudong", sushefenpei.getSusheloudong());
-        bedWrapper.eq("fangjianhao", sushefenpei.getFangjianhao());
-        bedWrapper.eq("chuangweihao", sushefenpei.getChuangweihao());
-        if(sushefenpei.getId() != null) {
-            bedWrapper.ne("id", sushefenpei.getId());
-        }
-        if(sushefenpeiService.selectCount(bedWrapper) > 0) {
+        if(isBedOccupied(sushefenpei)) {
             return "该床位已有人入住，请重新选择";
         }
         return null;
+    }
+
+    private void normalizeAllocationBedNo(SushefenpeiEntity sushefenpei) {
+        if(sushefenpei != null && StringUtils.isNotBlank(sushefenpei.getChuangweihao())) {
+            sushefenpei.setChuangweihao(normalizeBedNo(sushefenpei.getChuangweihao()));
+        }
+    }
+
+    private boolean isBedOccupied(SushefenpeiEntity sushefenpei) {
+        EntityWrapper<SushefenpeiEntity> wrapper = new EntityWrapper<SushefenpeiEntity>();
+        wrapper.eq("sushemingcheng", sushefenpei.getSushemingcheng());
+        wrapper.eq("susheloudong", sushefenpei.getSusheloudong());
+        wrapper.eq("fangjianhao", sushefenpei.getFangjianhao());
+        List<SushefenpeiEntity> allocations = sushefenpeiService.selectList(wrapper);
+        String targetBedNo = normalizeBedNo(sushefenpei.getChuangweihao());
+        for(SushefenpeiEntity allocation : allocations) {
+            if(sushefenpei.getId() != null && sushefenpei.getId().equals(allocation.getId())) {
+                continue;
+            }
+            if(targetBedNo.equals(normalizeBedNo(allocation.getChuangweihao()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeBedNo(String bedNo) {
+        if(StringUtils.isBlank(bedNo)) {
+            return "";
+        }
+        String value = bedNo.trim();
+        String digits = value.replaceAll("[^0-9]", "");
+        if(StringUtils.isNotBlank(digits)) {
+            return formatBedNo(Integer.parseInt(digits));
+        }
+        int chineseNumber = parseChineseBedNumber(value);
+        if(chineseNumber > 0) {
+            return formatBedNo(chineseNumber);
+        }
+        return value;
+    }
+
+    private String formatBedNo(int bedNo) {
+        return bedNo + "号床";
+    }
+
+    private int parseChineseBedNumber(String value) {
+        String text = value.replace("号床", "").replace("床", "").replace("号", "").trim();
+        String[] numerals = {"零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"};
+        for(int i = 1; i < numerals.length; i++) {
+            if(numerals[i].equals(text)) {
+                return i;
+            }
+        }
+        if(text.startsWith("十") && text.length() == 2) {
+            for(int i = 1; i < numerals.length; i++) {
+                if(numerals[i].equals(text.substring(1))) {
+                    return 10 + i;
+                }
+            }
+        }
+        if(text.endsWith("十") && text.length() == 2) {
+            int tens = parseChineseBedNumber(text.substring(0, 1));
+            if(tens > 0) {
+                return tens * 10;
+            }
+        }
+        if(text.length() == 3 && text.substring(1, 2).equals("十")) {
+            int tens = parseChineseBedNumber(text.substring(0, 1));
+            int ones = parseChineseBedNumber(text.substring(2));
+            if(tens > 0 && ones > 0) {
+                return tens * 10 + ones;
+            }
+        }
+        return 0;
     }
 
     private String normalizeStudentGender(String gender) {

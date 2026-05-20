@@ -467,11 +467,11 @@ export default {
 					const list = data && data.code === 0 ? (data.data.list || []) : [];
 					const occupiedBeds = list
 						.filter(item => String(item.id || '') !== String(this.ruleForm.id || ''))
-						.map(item => item.chuangweihao);
+						.map(item => this.normalizeBedNo(item.chuangweihao));
 					const options = [];
 					for (let i = 1; i <= capacity; i++) {
 						const value = `${i}号床`;
-						const occupied = occupiedBeds.includes(value);
+						const occupied = occupiedBeds.includes(this.normalizeBedNo(value));
 						options.push({
 							label: occupied ? `${value}（已占用）` : value,
 							value,
@@ -486,6 +486,33 @@ export default {
 			},
 			getUniqueValues(list, key) {
 				return Array.from(new Set((list || []).map(item => item[key]).filter(item => item)));
+			},
+			normalizeBedNo(value) {
+				if (!value) {
+					return '';
+				}
+				const text = String(value).trim();
+				const match = text.match(/\d+/);
+				if (match) {
+					return `${Number(match[0])}号床`;
+				}
+				const map = {
+					'一': 1,
+					'二': 2,
+					'三': 3,
+					'四': 4,
+					'五': 5,
+					'六': 6,
+					'七': 7,
+					'八': 8,
+					'九': 9,
+					'十': 10
+				};
+				const compact = text.replace(/号床|床|号/g, '');
+				if (map[compact]) {
+					return `${map[compact]}号床`;
+				}
+				return text;
 			},
 			getSelectedDorm() {
 				return this.dormOptions.find(item =>
@@ -594,6 +621,7 @@ export default {
       }).then(({ data }) => {
         if (data && data.code === 0) {
         this.ruleForm = data.data;
+		this.ruleForm.chuangweihao = this.normalizeBedNo(this.ruleForm.chuangweihao);
 		this.syncSelectedStudentInfo();
 		this.refreshStudentOptions();
 		this.refreshDormSelectors();
@@ -660,6 +688,7 @@ var objcross = this.$storage.getObj('crossObj');
         }
        this.$refs["ruleForm"].validate(valid => {
          if (valid) {
+		 this.ruleForm.chuangweihao = this.normalizeBedNo(this.ruleForm.chuangweihao);
 		 if (!this.validateGenderMatch()) {
 			 return false;
 		 }

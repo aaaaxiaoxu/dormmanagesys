@@ -1,5 +1,8 @@
 <template>
-	<div class="layout-shell">
+	<div :class="['layout-shell', { 'is-aside-collapsed': asideCollapsed }]">
+		<button class="nav-toggle" :title="asideCollapsed ? '展开导航' : '收起导航'" @click="asideCollapsed = !asideCollapsed">
+			<i :class="asideCollapsed ? 'el-icon-s-unfold' : 'el-icon-s-fold'"></i>
+		</button>
 		<index-aside v-if="'vertical' == 'vertical'" class="layout-aside"></index-aside>
 		<el-main :class='"vertical" == "vertical" ? "layout-main" : "layout-main is-horizontal"'>
 			<index-header class="layout-header"></index-header>
@@ -25,7 +28,8 @@
 				role: "",
 				currentIndex: -2,
 				itemMenu: [],
-				title: ''
+				title: '',
+				asideCollapsed: false
 			};
 		},
 		mounted() {
@@ -92,6 +96,7 @@
 	}
 
 	.layout-aside {
+		transition: transform 0.25s ease;
 		box-shadow: 14px 0 30px rgba(57, 111, 73, 0.1);
 		padding: 0 0 100px;
 		overflow: hidden;
@@ -108,6 +113,7 @@
 	}
 
 	.layout-main {
+		transition: margin-left 0.25s ease;
 		min-height: 100%;
 		padding: 0;
 		margin: 0 0 0 216px;
@@ -123,6 +129,7 @@
 	}
 
 	.layout-header {
+		transition: left 0.25s ease, width 0.25s ease;
 		padding: 14px 26px;
 		align-items: center;
 		top: 0;
@@ -147,6 +154,43 @@
 		width: calc(100% - 40px);
 		border: 1px solid rgba(207, 228, 200, 0.9);
 		box-shadow: 0 8px 22px rgba(57, 111, 73, 0.07);
+	}
+
+	.nav-toggle {
+		align-items: center;
+		background: #fff;
+		border: 1px solid rgba(111, 189, 117, 0.36);
+		border-radius: 12px;
+		box-shadow: 0 8px 18px rgba(57, 111, 73, 0.12);
+		color: #2f7c43;
+		cursor: pointer;
+		display: flex;
+		height: 38px;
+		justify-content: center;
+		left: 18px;
+		position: fixed;
+		top: 18px;
+		width: 38px;
+		z-index: 1010;
+	}
+
+	.nav-toggle i {
+		font-size: 18px;
+	}
+
+	.is-aside-collapsed {
+		.layout-aside {
+			transform: translateX(-216px);
+		}
+
+		.layout-main {
+			margin-left: 0;
+		}
+
+		.layout-header {
+			left: 0;
+			width: 100%;
+		}
 	}
 
 	.router-view {

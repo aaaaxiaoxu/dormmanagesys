@@ -12,7 +12,7 @@
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">标题</label>
 						<el-input v-model="searchForm.biaoti" placeholder="标题" clearable></el-input>
 					</div>
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生姓名</label>
 						<el-input v-model="searchForm.xueshengxingming" placeholder="学生姓名" clearable></el-input>
 					</div>
@@ -31,7 +31,7 @@
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
 					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#6bbf7b,#8ccf65)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">提交请假</el-button>
-					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','查看')" type="success" icon="el-icon-download" @click="$exportTable('qingjia')">导出Excel</el-button>
+					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','查看') && $storage.get('sessionTable') !== 'xuesheng'" type="success" icon="el-icon-download" @click="$exportTable('qingjia')">导出Excel</el-button>
 					<el-button :style='{"border":"2px solid #e0b64a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#9c7427","borderRadius":"40px","background":"#fffaf0","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','新增') && $storage.get('sessionTable') !== 'xuesheng'" type="warning" icon="el-icon-upload2" @click="$importTable('qingjia', getDataList)">导入Excel</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('qingjia','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
@@ -62,14 +62,16 @@
 					
 					<el-table-column :resizable='true' :sortable='true'  
 						prop="xueshengxuehao"
-					label="学生学号">
+					label="学生学号"
+					v-if="!isStudentView">
 						<template slot-scope="scope">
 							{{scope.row.xueshengxuehao}}
 						</template>
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true'  
 						prop="xueshengxingming"
-					label="学生姓名">
+					label="学生姓名"
+					v-if="!isStudentView">
 						<template slot-scope="scope">
 							{{scope.row.xueshengxingming}}
 						</template>
@@ -236,6 +238,11 @@ export default {
   },
   components: {
     AddOrUpdate,
+  },
+  computed: {
+    isStudentView() {
+      return this.$storage.get('sessionTable') === 'xuesheng';
+    }
   },
   methods: {
 

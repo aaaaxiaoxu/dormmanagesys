@@ -11,7 +11,7 @@
     </section>
 
     <section class="metric-grid">
-      <div v-for="item in metrics" :key="item.label" class="metric-card">
+      <div v-for="item in metrics" :key="item.label" class="metric-card" @click="openMetricDetail(item.key)">
         <div class="metric-icon">
           <i :class="item.icon"></i>
         </div>
@@ -30,6 +30,7 @@
             <h3>楼栋入住率</h3>
             <p>按宿舍资源统计床位使用情况</p>
           </div>
+          <el-button type="text" @click="openMetricDetail('occupancy')">查看详情</el-button>
         </div>
         <div ref="occupancyChart" class="chart-box"></div>
       </div>
@@ -40,6 +41,7 @@
             <h3>请假审批状态</h3>
             <p>待审核、通过和驳回分布</p>
           </div>
+          <el-button type="text" @click="openMetricDetail('leaves')">查看详情</el-button>
         </div>
         <div ref="leaveChart" class="chart-box"></div>
       </div>
@@ -50,6 +52,7 @@
             <h3>报修处理状态</h3>
             <p>反映当前工单处理压力</p>
           </div>
+          <el-button type="text" @click="openMetricDetail('repairs')">查看详情</el-button>
         </div>
         <div ref="repairChart" class="chart-box"></div>
       </div>
@@ -60,10 +63,24 @@
             <h3>门禁出入楼栋分布</h3>
             <p>对比不同楼栋出入活跃度</p>
           </div>
+          <el-button type="text" @click="openMetricDetail('access')">查看详情</el-button>
         </div>
         <div ref="accessChart" class="chart-box"></div>
       </div>
     </section>
+
+    <el-dialog :title="detailTitle" :visible.sync="detailDialogVisible" width="760px" class="analysis-detail-dialog">
+      <el-table :data="detailRows" height="420" stripe border>
+        <el-table-column
+          v-for="column in detailColumns"
+          :key="column.prop"
+          :prop="column.prop"
+          :label="column.label"
+          :width="column.width"
+          show-overflow-tooltip
+        ></el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
@@ -88,36 +105,49 @@ export default {
       leaveRows: [],
       repairRows: [],
       accessRows: [],
+      accessDetailRows: [],
+      leaveDetailRows: [],
+      repairDetailRows: [],
+      hygieneDetailRows: [],
+      detailDialogVisible: false,
+      detailTitle: "",
+      detailColumns: [],
+      detailRows: [],
     };
   },
   computed: {
     metrics() {
       return [
         {
+          key: "occupancy",
           label: "宿舍入住率",
           value: this.summary.occupancyRate + "%",
           desc: this.summary.occupiedBeds + " / " + this.summary.totalBeds + " 个床位已使用",
           icon: "el-icon-house",
         },
         {
+          key: "access",
           label: "今日门禁样本",
           value: this.summary.totalAccess,
           desc: "当前门禁出入记录总数",
           icon: "el-icon-s-check",
         },
         {
+          key: "leaves",
           label: "待审核请假",
           value: this.summary.pendingLeaves,
           desc: "请假申请总数 " + this.summary.totalLeaves,
           icon: "el-icon-date",
         },
         {
+          key: "repairs",
           label: "待处理报修",
           value: this.summary.pendingRepairs,
           desc: "报修工单总数 " + this.summary.totalRepairs,
           icon: "el-icon-warning-outline",
         },
         {
+          key: "hygiene",
           label: "卫生检查",
           value: this.summary.totalHygiene,
           desc: "累计宿舍卫生检查记录",
@@ -140,10 +170,10 @@ export default {
       try {
         const results = await Promise.all([
           this.fetchPage("sushexinxi/page", { page: 1, limit: 1000 }),
-          this.fetchPage("churusushe/page", { page: 1, limit: 1 }),
-          this.fetchPage("qingjia/page", { page: 1, limit: 1 }),
-          this.fetchPage("weixiuxinxi/page", { page: 1, limit: 1 }),
-          this.fetchPage("weishengxinxi/page", { page: 1, limit: 1 }),
+          this.fetchPage("churusushe/page", { page: 1, limit: 1000, sort: "id", order: "desc" }),
+          this.fetchPage("qingjia/page", { page: 1, limit: 1000, sort: "id", order: "desc" }),
+          this.fetchPage("weixiuxinxi/page", { page: 1, limit: 1000, sort: "id", order: "desc" }),
+          this.fetchPage("weishengxinxi/page", { page: 1, limit: 1000, sort: "id", order: "desc" }),
           this.fetchGroup("qingjia", "sfsh"),
           this.fetchGroup("weixiuxinxi", "sfsh"),
           this.fetchGroup("churusushe", "susheloudong"),
@@ -158,6 +188,10 @@ export default {
         this.leaveRows = results[5];
         this.repairRows = results[6];
         this.accessRows = results[7];
+        this.accessDetailRows = accessPage.list || [];
+        this.leaveDetailRows = leavePage.list || [];
+        this.repairDetailRows = repairPage.list || [];
+        this.hygieneDetailRows = hygienePage.list || [];
         this.occupancyRows = this.buildOccupancyRows(dormPage.list || []);
 
         const totalBeds = this.occupancyRows.reduce((sum, item) => sum + item.totalBeds, 0);
@@ -217,6 +251,75 @@ export default {
     findGroupTotal(rows, name) {
       const row = rows.find(item => item.name === name);
       return row ? row.total : 0;
+    },
+    openMetricDetail(type) {
+      const configs = {
+        occupancy: {
+          title: "楼栋入住率详情",
+          columns: [
+            { prop: "name", label: "楼栋" },
+            { prop: "occupiedBeds", label: "已入住", width: 110 },
+            { prop: "totalBeds", label: "总床位", width: 110 },
+            { prop: "rate", label: "入住率", width: 110 },
+          ],
+          rows: this.occupancyRows.map(item => Object.assign({}, item, {
+            rate: item.totalBeds ? Math.round((item.occupiedBeds / item.totalBeds) * 100) + "%" : "0%"
+          }))
+        },
+        access: {
+          title: "门禁出入详情",
+          columns: [
+            { prop: "sushemingcheng", label: "宿舍名称" },
+            { prop: "susheloudong", label: "楼栋", width: 100 },
+            { prop: "fangjianhao", label: "房间号", width: 100 },
+            { prop: "xueshengxingming", label: "学生姓名", width: 110 },
+            { prop: "churushijian", label: "通行时间", width: 170 },
+          ],
+          rows: this.accessDetailRows
+        },
+        leaves: {
+          title: "请假审批详情",
+          columns: [
+            { prop: "biaoti", label: "标题" },
+            { prop: "xueshengxingming", label: "学生姓名", width: 110 },
+            { prop: "qingjia1", label: "离开日期", width: 130 },
+            { prop: "qingjia2", label: "返回日期", width: 130 },
+            { prop: "sfsh", label: "审核状态", width: 110 },
+          ],
+          rows: this.leaveDetailRows
+        },
+        repairs: {
+          title: "报修处理详情",
+          columns: [
+            { prop: "biaoti", label: "标题" },
+            { prop: "susheloudong", label: "楼栋", width: 100 },
+            { prop: "fangjianhao", label: "房间号", width: 100 },
+            { prop: "xueshengxingming", label: "学生姓名", width: 110 },
+            { prop: "sfsh", label: "工单状态", width: 110 },
+          ],
+          rows: this.repairDetailRows
+        },
+        hygiene: {
+          title: "卫生检查详情",
+          columns: [
+            { prop: "sushemingcheng", label: "宿舍名称" },
+            { prop: "susheloudong", label: "楼栋", width: 100 },
+            { prop: "fangjianhao", label: "房间号", width: 100 },
+            { prop: "weishengqingkuang", label: "卫生情况", width: 110 },
+            { prop: "pingfen", label: "评分", width: 90 },
+            { prop: "dengjiriqi", label: "检查日期", width: 130 },
+          ],
+          rows: this.hygieneDetailRows
+        },
+      };
+      const config = configs[type];
+      if (!config) {
+        return;
+      }
+      this.detailTitle = config.title;
+      this.detailColumns = config.columns;
+      this.detailRows = config.rows || [];
+      this.detailDialogVisible = true;
     },
     renderCharts() {
       this.charts.forEach(chart => chart && chart.dispose());
@@ -331,8 +434,15 @@ export default {
   display: flex;
   gap: 12px;
   align-items: center;
+  cursor: pointer;
   min-height: 96px;
   padding: 16px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  box-shadow: 0 16px 30px rgba(57, 111, 73, 0.14);
+  transform: translateY(-2px);
 }
 
 .metric-icon {
@@ -400,6 +510,11 @@ export default {
 .chart-box {
   width: 100%;
   height: 300px;
+}
+
+.analysis-detail-dialog ::v-deep .el-dialog {
+  border-radius: 14px;
+  overflow: hidden;
 }
 
 @media (max-width: 1180px) {

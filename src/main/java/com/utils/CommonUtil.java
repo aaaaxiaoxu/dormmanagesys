@@ -171,17 +171,12 @@ public class CommonUtil {
         }
         org.json.JSONObject res = null;
         try {
-            File path = new File(ResourceUtils.getURL("classpath:static").getPath());
-            if(!path.exists()) {
-                path = new File("");
-            }
-            File upload = new File(path.getAbsolutePath(),"/upload/");
-            File file1 = new File(upload.getAbsolutePath()+"/"+face1);
-            File file2 = new File(upload.getAbsolutePath()+"/"+face2);
-            if(!file1.exists()) {
+            File file1 = UploadFileUtil.findUploadFile(face1);
+            File file2 = UploadFileUtil.findUploadFile(face2);
+            if(file1 == null || !file1.exists()) {
                 return R.error("当前用户的人脸底图不存在，请重新上传头像并录入人脸");
             }
-            if(!file2.exists()) {
+            if(file2 == null || !file2.exists()) {
                 return R.error("现场照片不存在，请重新拍照后再试");
             }
             String img1 = Base64Util.encode(FileUtil.FileToByte(file1));
@@ -213,13 +208,8 @@ public class CommonUtil {
             return R.error("请先上传现场照片后再进行人脸校验");
         }
         try {
-            File path = new File(ResourceUtils.getURL("classpath:static").getPath());
-            if(!path.exists()) {
-                path = new File("");
-            }
-            File upload = new File(path.getAbsolutePath(),"/upload/");
-            File file = new File(upload.getAbsolutePath()+"/"+face2);
-            if(!file.exists()) {
+            File file = UploadFileUtil.findUploadFile(face2);
+            if(file == null || !file.exists()) {
                 return R.error("现场照片不存在，请重新拍照后再试");
             }
             String img = Base64.getEncoder().encodeToString(FileUtil.FileToByte(file));
@@ -252,13 +242,8 @@ public class CommonUtil {
             return R.error("请先拍照或上传人脸照片后再录入");
         }
         try {
-            File path = new File(ResourceUtils.getURL("classpath:static").getPath());
-            if(!path.exists()) {
-                path = new File("");
-            }
-            File upload = new File(path.getAbsolutePath(),"/upload/");
-            File file = new File(upload.getAbsolutePath()+"/"+face);
-            if(!file.exists()) {
+            File file = UploadFileUtil.findUploadFile(face);
+            if(file == null || !file.exists()) {
                 return R.error("待录入的人脸照片不存在，请重新拍照后再试");
             }
             String img = Base64.getEncoder().encodeToString(FileUtil.FileToByte(file));

@@ -118,20 +118,37 @@ export default {
       var token = storage.get("token");
       let _this = this;
       fileList.forEach(function(item, index) {
-        var url = item.url.split("?")[0];
-	if(!url.startsWith("http")) {
-	  url = _this.$base.url+url
-	}
+        var storageUrl = _this.normalizeStoredUrl(item.url);
+        var url = _this.toDisplayUrl(storageUrl);
         var name = item.name;
         var file = {
           name: name,
           url: url + "?token=" + token
         };
         fileArray.push(file);
-        fileUrlArray.push(url);
+        fileUrlArray.push(storageUrl);
       });
       this.fileList = fileArray;
       this.fileUrlList = fileUrlArray;
+    },
+    normalizeStoredUrl(url) {
+      if (!url) {
+        return "";
+      }
+      return String(url)
+        .split("?")[0]
+        .replace(new RegExp("^" + this.$base.url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "")
+        .replace(/^\/+/, "")
+        .replace(/^dormmanagesys\//, "");
+    },
+    toDisplayUrl(url) {
+      if (!url) {
+        return "";
+      }
+      if (url.startsWith("http")) {
+        return url;
+      }
+      return this.$base.url + url.replace(/^\/+/, "");
     }
   }
 };

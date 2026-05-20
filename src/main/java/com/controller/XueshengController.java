@@ -79,28 +79,7 @@ public class XueshengController {
 		Long uId = new Date().getTime();
 		xuesheng.setId(uId);
         xueshengService.insert(xuesheng);
-
-        try {
-            File path = new File(ResourceUtils.getURL("classpath:static").getPath());
-            if(!path.exists()) {
-                path = new File("");
-            }
-            File upload = new File(path.getAbsolutePath(),"");
-            if(!upload.exists()) {
-                upload.mkdirs();
-            }
-            File file = new File(upload.getAbsolutePath()+"/"+xuesheng.getTouxiang());
-            try (FileInputStream imageInFile = new FileInputStream(file)) {
-                byte[] imageData = new byte[(int) file.length()];
-                imageInFile.read(imageData);
-                FaceUtil.registerFace(Base64.getEncoder().encodeToString(imageData), xuesheng.getId().toString());
-            }
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
-
+        registerStudentFace(xuesheng);
         return R.ok();
     }
 
@@ -222,26 +201,7 @@ public class XueshengController {
 		}
 		xuesheng.setId(new Date().getTime());
         xueshengService.insert(xuesheng);
-        try {
-            File path = new File(ResourceUtils.getURL("classpath:static").getPath());
-            if(!path.exists()) {
-                path = new File("");
-            }
-            File upload = new File(path.getAbsolutePath(),"");
-            if(!upload.exists()) {
-                upload.mkdirs();
-            }
-            File file = new File(upload.getAbsolutePath()+"/"+xuesheng.getTouxiang());
-            try (FileInputStream imageInFile = new FileInputStream(file)) {
-                byte[] imageData = new byte[(int) file.length()];
-                imageInFile.read(imageData);
-                FaceUtil.registerFace(Base64.getEncoder().encodeToString(imageData), xuesheng.getId().toString());
-            }
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-
+        registerStudentFace(xuesheng);
         return R.ok();
     }
     
@@ -258,25 +218,7 @@ public class XueshengController {
 		}
 		xuesheng.setId(new Date().getTime());
         xueshengService.insert(xuesheng);
-        try {
-            File path = new File(ResourceUtils.getURL("classpath:static").getPath());
-            if(!path.exists()) {
-                path = new File("");
-            }
-            File upload = new File(path.getAbsolutePath(),"");
-            if(!upload.exists()) {
-                upload.mkdirs();
-            }
-            File file = new File(upload.getAbsolutePath()+"/"+xuesheng.getTouxiang());
-            try (FileInputStream imageInFile = new FileInputStream(file)) {
-                byte[] imageData = new byte[(int) file.length()];
-                imageInFile.read(imageData);
-                FaceUtil.registerFace(Base64.getEncoder().encodeToString(imageData), xuesheng.getId().toString());
-            }
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
+        registerStudentFace(xuesheng);
         return R.ok();
     }
 
@@ -290,27 +232,22 @@ public class XueshengController {
     public R update(@RequestBody XueshengEntity xuesheng, HttpServletRequest request){
         //ValidatorUtils.validateEntity(xuesheng);
         xueshengService.updateById(xuesheng);//全部更新
-        try {
-            File path = new File(ResourceUtils.getURL("classpath:static").getPath());
-            if(!path.exists()) {
-                path = new File("");
-            }
-            File upload = new File(path.getAbsolutePath(),"");
-            if(!upload.exists()) {
-                upload.mkdirs();
-            }
-            File file = new File(upload.getAbsolutePath()+"/"+xuesheng.getTouxiang());
-            try (FileInputStream imageInFile = new FileInputStream(file)) {
-                byte[] imageData = new byte[(int) file.length()];
-                imageInFile.read(imageData);
-                FaceUtil.registerFace(Base64.getEncoder().encodeToString(imageData), xuesheng.getId().toString());
-            }
+        registerStudentFace(xuesheng);
+        return R.ok();
+    }
 
+    private void registerStudentFace(XueshengEntity xuesheng) {
+        if(xuesheng == null || xuesheng.getId() == null || StringUtils.isBlank(xuesheng.getTouxiang())) {
+            return;
+        }
+        try {
+            File file = UploadFileUtil.findUploadFile(xuesheng.getTouxiang());
+            if(file != null && file.exists()) {
+                FaceUtil.registerFace(Base64.getEncoder().encodeToString(FileUtil.FileToByte(file)), xuesheng.getId().toString());
+            }
         }catch (Exception e){
             e.printStackTrace();
         }
-
-        return R.ok();
     }
 
 

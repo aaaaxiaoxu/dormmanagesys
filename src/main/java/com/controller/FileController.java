@@ -26,6 +26,7 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.entity.ConfigEntity;
 import com.entity.EIException;
 import com.service.ConfigService;
+import com.utils.UploadFileUtil;
 import com.utils.R;
 
 /**
@@ -61,16 +62,10 @@ public class FileController{
 		if (file.isEmpty()) {
 			throw new EIException("上传文件不能为空");
 		}
-		String fileExt = file.getOriginalFilename().substring(file.getOriginalFilename().lastIndexOf(".")+1);
-		File path = new File(ResourceUtils.getURL("classpath:static").getPath());
-		if(!path.exists()) {
-		    path = new File("");
-		}
-		File upload = new File(path.getAbsolutePath(),"/upload/");
-		if(!upload.exists()) {
-		    upload.mkdirs();
-		}
-		String fileName = new Date().getTime()+"."+fileExt;
+		String originalFilename = file.getOriginalFilename();
+		String fileExt = originalFilename.substring(originalFilename.lastIndexOf(".")+1);
+		File upload = UploadFileUtil.getUploadDir();
+		String fileName = new Date().getTime()+"_"+Math.abs(new Random().nextInt())+"."+fileExt;
 		File dest = new File(upload.getAbsolutePath()+"/"+fileName);
 		file.transferTo(dest);
 		if(StringUtils.isNotBlank(type) && type.equals("1")) {
@@ -94,16 +89,8 @@ public class FileController{
 	@RequestMapping("/download")
 	public ResponseEntity<byte[]> download(@RequestParam String fileName) {
 		try {
-			File path = new File(ResourceUtils.getURL("classpath:static").getPath());
-			if(!path.exists()) {
-			    path = new File("");
-			}
-			File upload = new File(path.getAbsolutePath(),"/upload/");
-			if(!upload.exists()) {
-			    upload.mkdirs();
-			}
-			File file = new File(upload.getAbsolutePath()+"/"+fileName);
-			if(file.exists()){
+			File file = UploadFileUtil.findUploadFile(fileName);
+			if(file != null && file.exists()){
 				/*if(!fileService.canRead(file, SessionManager.getSessionUser())){
 					getResponse().sendError(403);
 				}*/

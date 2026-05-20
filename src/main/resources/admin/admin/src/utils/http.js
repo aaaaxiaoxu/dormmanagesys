@@ -13,6 +13,9 @@ const http = axios.create({
 // 请求拦截
 http.interceptors.request.use(config => {
     config.headers['Token'] = storage.get('Token') // 请求头带上token
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+        delete config.headers['Content-Type']
+    }
     return config
 }, error => {
     return Promise.reject(error)

@@ -83,11 +83,11 @@ public class CommonController{
 				new String[]{"biaoti", "xueshengxuehao", "xueshengxingming", "qingjia1", "qingjia2", "qingjiayuanyin", "sfsh", "shhf"},
 				new String[]{"标题", "学生学号", "学生姓名", "离开日期", "返回日期", "请假原因", "审核状态", "审核回复"}));
 		definitions.put("churusushe", new ExportDefinition("门禁出入",
-				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "xueshengxuehao", "xueshengxingming", "churushijian", "xiangpian"},
-				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "学生学号", "学生姓名", "通行时间", "现场照片"}));
+				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "churuleixing", "xueshengxuehao", "xueshengxingming", "churushijian", "xiangpian"},
+				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "通行类型", "学生学号", "学生姓名", "通行时间", "现场照片"}));
 		definitions.put("weishengxinxi", new ExportDefinition("卫生检查",
-				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "xueshengxuehao", "xueshengxingming", "weishengqingkuang", "pingfen", "dengjiriqi", "xiangqing", "sfsh", "shhf"},
-				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "学生学号", "学生姓名", "卫生情况", "评分", "登记日期", "检查评语", "审核状态", "审核回复"}));
+				new String[]{"sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "weishengqingkuang", "pingfen", "dengjiriqi", "xiangqing", "sfsh", "shhf"},
+				new String[]{"宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "卫生情况", "评分", "登记日期", "检查评语", "审核状态", "审核回复"}));
 		definitions.put("weixiuxinxi", new ExportDefinition("报修工单",
 				new String[]{"biaoti", "sushemingcheng", "susheleixing", "susheloudong", "fangjianhao", "xueshengxuehao", "xueshengxingming", "weixiuriqi", "weixiuneirong", "sfsh", "shhf"},
 				new String[]{"标题", "宿舍名称", "宿舍类型", "宿舍楼栋", "房间号", "学生学号", "学生姓名", "维修日期", "维修内容", "工单状态", "处理备注"}));
@@ -125,7 +125,13 @@ public class CommonController{
 	 * 白名单数据导出
 	 */
 	@RequestMapping("/export/{tableName}")
-	public void exportTable(@PathVariable("tableName") String tableName, HttpServletResponse response) throws IOException {
+	public void exportTable(@PathVariable("tableName") String tableName, HttpServletRequest request, HttpServletResponse response) throws IOException {
+		if("xuesheng".equals(String.valueOf(request.getSession().getAttribute("tableName")))) {
+			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+			response.setContentType("application/json;charset=UTF-8");
+			response.getWriter().write("{\"code\":403,\"msg\":\"学生端不支持导出Excel\"}");
+			return;
+		}
 		ExportDefinition definition = EXPORT_DEFINITIONS.get(tableName);
 		if(definition == null) {
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -178,7 +184,10 @@ public class CommonController{
 	 */
 	@Transactional(rollbackFor = Exception.class)
 	@RequestMapping("/import/{tableName}")
-	public R importTable(@PathVariable("tableName") String tableName, @RequestParam("file") MultipartFile file) throws Exception {
+	public R importTable(@PathVariable("tableName") String tableName, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws Exception {
+		if("xuesheng".equals(String.valueOf(request.getSession().getAttribute("tableName")))) {
+			return R.error(403, "学生端不支持导入Excel");
+		}
 		ExportDefinition definition = EXPORT_DEFINITIONS.get(tableName);
 		if(definition == null) {
 			return R.error("暂不支持导入该数据表");

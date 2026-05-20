@@ -102,10 +102,7 @@ Vue.prototype.$importTable = function(tableName, onSuccess) {
     http({
       url: `import/${tableName}`,
       method: 'post',
-      data: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+      data: formData
     }).then(({ data }) => {
       if (data && data.code === 0) {
         this.$message.success(`导入成功，共${data.count || 0}条`);

@@ -43,6 +43,14 @@
 				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-else class="input" label="房间号" prop="fangjianhao">
 					<el-input v-model="ruleForm.fangjianhao" placeholder="房间号" readonly></el-input>
 				</el-form-item>
+				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="select" v-if="type!='info'" label="通行类型" prop="churuleixing">
+					<el-select :disabled="ro.churuleixing" v-model="ruleForm.churuleixing" placeholder="请先选择出宿或入宿">
+						<el-option v-for="item in churuleixingOptions" :key="item" :label="item" :value="item"></el-option>
+					</el-select>
+				</el-form-item>
+				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' v-else class="input" label="通行类型" prop="churuleixing">
+					<el-input v-model="ruleForm.churuleixing" placeholder="通行类型" readonly></el-input>
+				</el-form-item>
 				<el-form-item :style='{"width":"100%","margin":"0 0 20px 0","display":"inline-block"}' class="input" v-if="type!='info'"  label="学生学号" prop="xueshengxuehao">
 					<el-input v-model="ruleForm.xueshengxuehao" placeholder="学生学号" clearable  :readonly="ro.xueshengxuehao"></el-input>
 				</el-form-item>
@@ -183,6 +191,7 @@ export default {
 				susheleixing : true,
 				susheloudong : true,
 				fangjianhao : true,
+				churuleixing : false,
 				xueshengxuehao : true,
 				xueshengxingming : true,
 				churushijian : false,
@@ -195,12 +204,14 @@ export default {
 				susheleixing: '',
 				susheloudong: '',
 				fangjianhao: '',
+				churuleixing: '',
 				xueshengxuehao: '',
 				xueshengxingming: '',
 				churushijian: '',
 				xiangpian: '',
 				selectedAllocationNo: '',
 			},
+			churuleixingOptions: ['出宿', '入宿'],
 		
 
 			
@@ -215,6 +226,9 @@ export default {
 				susheloudong: [
 				],
 				fangjianhao: [
+				],
+				churuleixing: [
+					{ required: true, message: '请选择出宿或入宿', trigger: 'change' }
 				],
 				xueshengxuehao: [
 				],

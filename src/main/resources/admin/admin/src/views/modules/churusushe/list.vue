@@ -8,15 +8,15 @@
 			</div>
 			<el-form class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
 				<el-row :style='{"display":"block"}' >
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">宿舍名称</label>
 						<el-input v-model="searchForm.sushemingcheng" placeholder="宿舍名称" clearable></el-input>
 					</div>
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">楼栋</label>
 						<el-input v-model="searchForm.susheloudong" placeholder="宿舍楼栋" clearable></el-input>
 					</div>
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生姓名</label>
 						<el-input v-model="searchForm.xueshengxingming" placeholder="学生姓名" clearable></el-input>
 					</div>
@@ -24,12 +24,18 @@
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">通行日期</label>
 						<el-date-picker value-format="yyyy-MM-dd" v-model="searchForm.chururiqi" type="date" placeholder="通行日期" clearable></el-date-picker>
 					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select">
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">通行类型</label>
+						<el-select clearable v-model="searchForm.churuleixing" placeholder="通行类型">
+							<el-option v-for="item in churuleixingOptions" :key="item" :label="item" :value="item"></el-option>
+						</el-select>
+					</div>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 20px","outline":"none","margin":"0px 0 5px 0","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' type="success" @click="search()">查询</el-button>
 				</el-row>
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
 					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('churusushe','新增')" type="success" icon="el-icon-camera" @click="addOrUpdateHandler()">门禁核验</el-button>
-					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('churusushe','查看')" type="success" icon="el-icon-download" @click="$exportTable('churusushe')">导出Excel</el-button>
+					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('churusushe','查看') && $storage.get('sessionTable') !== 'xuesheng'" type="success" icon="el-icon-download" @click="$exportTable('churusushe')">导出Excel</el-button>
 					<el-button :style='{"border":"2px solid #e0b64a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#9c7427","borderRadius":"40px","background":"#fffaf0","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('churusushe','新增') && $storage.get('sessionTable') !== 'xuesheng'" type="warning" icon="el-icon-upload2" @click="$importTable('churusushe', getDataList)">导入Excel</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('churusushe','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
@@ -78,15 +84,24 @@
 						</template>
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true'
+						prop="churuleixing"
+					label="通行类型">
+						<template slot-scope="scope">
+							<el-tag :type="scope.row.churuleixing === '出宿' ? 'warning' : 'success'" size="mini">{{scope.row.churuleixing || '未标记'}}</el-tag>
+						</template>
+					</el-table-column>
+					<el-table-column :resizable='true' :sortable='true'
 						prop="xueshengxuehao"
-					label="学生学号">
+					label="学生学号"
+					v-if="!isStudentView">
 						<template slot-scope="scope">
 							{{scope.row.xueshengxuehao}}
 						</template>
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true'
 						prop="xueshengxingming"
-					label="学生姓名">
+					label="学生姓名"
+					v-if="!isStudentView">
 						<template slot-scope="scope">
 							{{scope.row.xueshengxingming}}
 						</template>
@@ -183,6 +198,7 @@ export default {
       chartVisiable5: false,
       addOrUpdateFlag:false,
       layouts: ["total","prev","pager","next","sizes","jumper"],
+      churuleixingOptions: ["出宿", "入宿"],
 
     };
   },
@@ -200,6 +216,11 @@ export default {
   },
   components: {
     AddOrUpdate,
+  },
+  computed: {
+    isStudentView() {
+      return this.$storage.get('sessionTable') === 'xuesheng';
+    }
   },
   methods: {
 
@@ -257,6 +278,9 @@ export default {
            if(this.searchForm.chururiqi!='' && this.searchForm.chururiqi!=undefined){
             params['churushijian_start'] = this.searchForm.chururiqi + ' 00:00:00'
             params['churushijian_end'] = this.searchForm.chururiqi + ' 23:59:59'
+          }
+           if(this.searchForm.churuleixing!='' && this.searchForm.churuleixing!=undefined){
+            params['churuleixing'] = this.searchForm.churuleixing
           }
       this.$http({
         url: "churusushe/page",

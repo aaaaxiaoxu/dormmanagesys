@@ -30,6 +30,7 @@ import com.annotation.IgnoreAuth;
 import com.entity.ChurususheEntity;
 import com.entity.view.ChurususheView;
 
+import com.service.AttendanceStatService;
 import com.service.ChurususheService;
 import com.service.TokenService;
 import com.utils.PageUtils;
@@ -38,6 +39,8 @@ import com.utils.MD5Util;
 import com.utils.MPUtil;
 import com.utils.CommonUtil;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 出入宿舍
@@ -51,6 +54,9 @@ import java.io.IOException;
 public class ChurususheController {
     @Autowired
     private ChurususheService churususheService;
+
+    @Autowired
+    private AttendanceStatService attendanceStatService;
 
 
     
@@ -134,9 +140,14 @@ public class ChurususheController {
      */
     @RequestMapping("/save")
     public R save(@RequestBody ChurususheEntity churusushe, HttpServletRequest request){
+        R validation = validateAccessRecord(churusushe);
+        if(validation != null) {
+            return validation;
+        }
     	churusushe.setId(new Date().getTime()+new Double(Math.floor(Math.random()*1000)).longValue());
     	//ValidatorUtils.validateEntity(churusushe);
         churususheService.insert(churusushe);
+        attendanceStatService.rebuildAround(churusushe.getChurushijian());
         return R.ok();
     }
     
@@ -145,9 +156,14 @@ public class ChurususheController {
      */
     @RequestMapping("/add")
     public R add(@RequestBody ChurususheEntity churusushe, HttpServletRequest request){
+        R validation = validateAccessRecord(churusushe);
+        if(validation != null) {
+            return validation;
+        }
     	churusushe.setId(new Date().getTime()+new Double(Math.floor(Math.random()*1000)).longValue());
     	//ValidatorUtils.validateEntity(churusushe);
         churususheService.insert(churusushe);
+        attendanceStatService.rebuildAround(churusushe.getChurushijian());
         return R.ok();
     }
 
@@ -159,8 +175,13 @@ public class ChurususheController {
     @RequestMapping("/update")
     @Transactional
     public R update(@RequestBody ChurususheEntity churusushe, HttpServletRequest request){
+        R validation = validateAccessRecord(churusushe);
+        if(validation != null) {
+            return validation;
+        }
         //ValidatorUtils.validateEntity(churusushe);
         churususheService.updateById(churusushe);//全部更新
+        attendanceStatService.rebuildAround(churusushe.getChurushijian());
         return R.ok();
     }
 
@@ -173,18 +194,29 @@ public class ChurususheController {
      */
     @RequestMapping("/delete")
     public R delete(@RequestBody Long[] ids){
+        Set<String> months = new HashSet<String>();
+        for(Long id : ids) {
+            ChurususheEntity record = churususheService.selectById(id);
+            if(record != null && record.getChurushijian() != null) {
+                months.add(attendanceStatService.monthOf(record.getChurushijian()));
+            }
+        }
         churususheService.deleteBatchIds(Arrays.asList(ids));
+        for(String month : months) {
+            attendanceStatService.rebuildMonthly(month);
+        }
         return R.ok();
     }
-    
-	
-
-
-
-
-
-
-
-
-
+    private R validateAccessRecord(ChurususheEntity churusushe) {
+        if(churusushe == null) {
+            return R.error("门禁记录不能为空");
+        }
+        if(StringUtils.isBlank(churusushe.getChuruleixing()) || (!"出宿".equals(churusushe.getChuruleixing()) && !"入宿".equals(churusushe.getChuruleixing()))) {
+            return R.error("请选择出宿或入宿");
+        }
+        if(churusushe.getChurushijian() == null) {
+            return R.error("请选择通行时间");
+        }
+        return null;
+    }
 }

@@ -30,6 +30,7 @@ import com.annotation.IgnoreAuth;
 import com.entity.KaoqinxinxiEntity;
 import com.entity.view.KaoqinxinxiView;
 
+import com.service.AttendanceStatService;
 import com.service.KaoqinxinxiService;
 import com.service.TokenService;
 import com.utils.PageUtils;
@@ -51,6 +52,9 @@ import java.io.IOException;
 public class KaoqinxinxiController {
     @Autowired
     private KaoqinxinxiService kaoqinxinxiService;
+
+    @Autowired
+    private AttendanceStatService attendanceStatService;
 
 
     
@@ -105,6 +109,21 @@ public class KaoqinxinxiController {
  		ew.allEq(MPUtil.allEQMapPre( kaoqinxinxi, "kaoqinxinxi")); 
 		KaoqinxinxiView kaoqinxinxiView =  kaoqinxinxiService.selectView(ew);
 		return R.ok("查询考勤信息成功").put("data", kaoqinxinxiView);
+    }
+
+    /**
+     * 按月根据门禁出入和已通过请假自动重算考勤。
+     */
+    @RequestMapping("/rebuildMonthly")
+    @Transactional
+    public R rebuildMonthly(@RequestParam Map<String, Object> params){
+        String yuefen = params.get("yuefen") == null ? "" : String.valueOf(params.get("yuefen"));
+        try {
+            int count = attendanceStatService.rebuildMonthly(yuefen);
+            return R.ok("考勤统计已重算").put("count", count);
+        } catch (IllegalArgumentException e) {
+            return R.error(e.getMessage());
+        }
     }
 	
     /**

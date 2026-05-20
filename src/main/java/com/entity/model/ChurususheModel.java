@@ -42,6 +42,12 @@ public class ChurususheModel  implements Serializable {
 	private String fangjianhao;
 		
 	/**
+	 * 通行类型
+	 */
+	
+	private String churuleixing;
+		
+	/**
 	 * 学生学号
 	 */
 	
@@ -113,6 +119,22 @@ public class ChurususheModel  implements Serializable {
 	 */
 	public String getFangjianhao() {
 		return fangjianhao;
+	}
+				
+	
+	/**
+	 * 设置：通行类型
+	 */
+	 
+	public void setChuruleixing(String churuleixing) {
+		this.churuleixing = churuleixing;
+	}
+	
+	/**
+	 * 获取：通行类型
+	 */
+	public String getChuruleixing() {
+		return churuleixing;
 	}
 				
 	

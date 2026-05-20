@@ -8,11 +8,11 @@
 			</div>
 			<el-form class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
 				<el-row :style='{"display":"block"}' >
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">宿舍名称</label>
 						<el-input v-model="searchForm.sushemingcheng" placeholder="宿舍名称" clearable></el-input>
 					</div>
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">楼栋</label>
 						<el-input v-model="searchForm.susheloudong" placeholder="宿舍楼栋" clearable></el-input>
 					</div>
@@ -20,7 +20,7 @@
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">月份</label>
 						<el-input v-model="searchForm.yuefen" placeholder="月份" clearable></el-input>
 					</div>
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生姓名</label>
 						<el-input v-model="searchForm.xueshengxingming" placeholder="学生姓名" clearable></el-input>
 					</div>
@@ -34,10 +34,11 @@
 				</el-row>
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
-						<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('kaoqinxinxi','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">登记异常</el-button>
-						<el-button :style='{"border":"2px solid #5fb98a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#3f8d67","borderRadius":"40px","background":"#f6fff8","width":"160px","fontSize":"14px","height":"40px"}' type="success" icon="el-icon-download" @click="$exportTable('kaoqinxinxi')">导出Excel</el-button>
-						<el-button :style='{"border":"2px solid #e0b64a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#9c7427","borderRadius":"40px","background":"#fffaf0","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('kaoqinxinxi','新增')" type="warning" icon="el-icon-upload2" @click="$importTable('kaoqinxinxi', getDataList)">导入Excel</el-button>
-						<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('kaoqinxinxi','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
+						<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('kaoqinxinxi','新增') && !isStudentView" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">登记异常</el-button>
+						<el-button :style='{"border":"2px solid #5fb98a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#3f8d67","borderRadius":"40px","background":"#f6fff8","width":"160px","fontSize":"14px","height":"40px"}' v-if="!isStudentView" type="success" icon="el-icon-refresh" @click="rebuildMonthlyAttendance()">重算月考勤</el-button>
+						<el-button :style='{"border":"2px solid #5fb98a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#3f8d67","borderRadius":"40px","background":"#f6fff8","width":"160px","fontSize":"14px","height":"40px"}' v-if="$storage.get('sessionTable') !== 'xuesheng'" type="success" icon="el-icon-download" @click="$exportTable('kaoqinxinxi')">导出Excel</el-button>
+						<el-button :style='{"border":"2px solid #e0b64a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#9c7427","borderRadius":"40px","background":"#fffaf0","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('kaoqinxinxi','新增') && !isStudentView" type="warning" icon="el-icon-upload2" @click="$importTable('kaoqinxinxi', getDataList)">导入Excel</el-button>
+						<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('kaoqinxinxi','删除') && !isStudentView" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
 
 
@@ -107,14 +108,16 @@
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true'  
 						prop="xueshengxuehao"
-					label="学生学号">
+					label="学生学号"
+					v-if="!isStudentView">
 						<template slot-scope="scope">
 							{{scope.row.xueshengxuehao}}
 						</template>
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true'  
 						prop="xueshengxingming"
-					label="学生姓名">
+					label="学生姓名"
+					v-if="!isStudentView">
 						<template slot-scope="scope">
 							{{scope.row.xueshengxingming}}
 						</template>
@@ -160,13 +163,13 @@
 					<el-table-column width="300" label="操作">
 						<template slot-scope="scope">
 							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('kaoqinxinxi','查看')" type="success" size="mini" @click="addOrUpdateHandler(scope.row.id,'info')">详情</el-button>
-							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('kaoqinxinxi','修改')" type="primary" size="mini" @click="addOrUpdateHandler(scope.row.id)">补充处理</el-button>
+							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('kaoqinxinxi','修改') && !isStudentView" type="primary" size="mini" @click="addOrUpdateHandler(scope.row.id)">补充处理</el-button>
 
 
 
 
 
-							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if="isAuth('kaoqinxinxi','删除') " type="danger" size="mini" @click="deleteHandler(scope.row.id)">删除</el-button>
+							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if="isAuth('kaoqinxinxi','删除') && !isStudentView" type="danger" size="mini" @click="deleteHandler(scope.row.id)">删除</el-button>
 						</template>
 					</el-table-column>
 				</el-table>
@@ -252,6 +255,11 @@ export default {
   components: {
     AddOrUpdate,
   },
+  computed: {
+    isStudentView() {
+      return this.$storage.get('sessionTable') === 'xuesheng';
+    }
+  },
   methods: {
 
     contentStyleChange() {
@@ -286,6 +294,38 @@ export default {
       this.pageIndex = 1;
       this.getDataList();
       this.loadAttendanceStats();
+    },
+    currentMonth() {
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      return `${now.getFullYear()}-${month < 10 ? '0' + month : month}`;
+    },
+    rebuildMonthlyAttendance() {
+      const yuefen = this.searchForm.yuefen || this.currentMonth();
+      this.$confirm(`确定根据门禁出入和请假记录重算 ${yuefen} 的月考勤吗？`, "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      }).then(() => {
+        this.$http({
+          url: "kaoqinxinxi/rebuildMonthly",
+          method: "post",
+          params: { yuefen }
+        }).then(({ data }) => {
+          if (data && data.code === 0) {
+            this.$message({
+              message: `${data.msg || '重算完成'}，共更新${data.count || 0}名学生`,
+              type: "success",
+              duration: 1500,
+              onClose: () => {
+                this.search();
+              }
+            });
+          } else {
+            this.$message.error((data && data.msg) || "重算失败");
+          }
+        });
+      }).catch(() => {});
     },
 
     // 获取数据列表

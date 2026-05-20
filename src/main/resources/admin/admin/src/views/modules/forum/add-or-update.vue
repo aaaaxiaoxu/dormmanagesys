@@ -146,6 +146,12 @@
           <i class="el-icon-lock"></i>
           当前帖子已关闭，暂时不能继续评论。
         </div>
+        <div v-if="!canCommentThread" class="closed-actions">
+          <el-button class="back-btn" @click="back()">
+            <i class="el-icon-arrow-left"></i>
+            返回列表
+          </el-button>
+        </div>
 
         <el-form v-else ref="replyForm" :model="replyForm" :rules="replyRules" label-width="100px" class="reply-form">
           <el-form-item v-if="activeReplyTarget" label="回复对象">
@@ -903,6 +909,10 @@ export default {
 
 .closed-tip i {
   margin-right: 8px;
+}
+
+.closed-actions {
+  margin-top: 18px;
 }
 
 .reply-form ::v-deep .el-form-item__label,

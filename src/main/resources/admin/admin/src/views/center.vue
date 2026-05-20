@@ -1,5 +1,16 @@
 <template>
-  <div :style='{ "padding": "30px 0 0 0" }'>
+  <div class="center-page" :style='{ "padding": "30px 0 0 0" }'>
+    <div class="profile-hero">
+      <div class="profile-avatar" :class="{ empty: !faceArchiveUrl }">
+        <img v-if="faceArchiveUrl" :src="faceArchiveUrl">
+        <i v-else class="el-icon-user"></i>
+      </div>
+      <div class="profile-copy">
+        <span>{{ profileRoleLabel }}</span>
+        <h2>{{ profileDisplayName }}</h2>
+        <p>{{ profileSummary }}</p>
+      </div>
+    </div>
     <el-form :style='{ "padding": "20px 0px 120px" }' class="add-update-preview" ref="ruleForm" :model="ruleForm"
       label-width="140px">
       <el-row>
@@ -142,6 +153,34 @@ export default {
           return this.faceArchivePath;
         }
         return this.$base.url + this.faceArchivePath;
+      },
+      profileRoleLabel() {
+        if (this.flag === 'xuesheng') {
+          return '学生个人中心';
+        }
+        if (this.flag === 'suguan') {
+          return '宿管员个人中心';
+        }
+        return '管理员个人中心';
+      },
+      profileDisplayName() {
+        if (this.flag === 'xuesheng') {
+          return this.ruleForm.xueshengxingming || this.ruleForm.xueshengxuehao || '学生';
+        }
+        if (this.flag === 'suguan') {
+          return this.ruleForm.suguanxingming || this.ruleForm.zhanghao || '宿管员';
+        }
+        return this.ruleForm.username || '管理员';
+      },
+      profileSummary() {
+        if (this.flag === 'xuesheng') {
+          const dorm = [this.studentDorm.susheloudong, this.studentDorm.fangjianhao].filter(Boolean).join(' / ');
+          return dorm ? `当前宿舍：${dorm}` : '当前暂未分配宿舍';
+        }
+        if (this.flag === 'suguan') {
+          return this.ruleForm.dianhua ? `联系电话：${this.ruleForm.dianhua}` : '可在下方维护个人联系方式';
+        }
+        return '可在下方维护管理员账号信息';
       }
     },
 	  mounted() {
@@ -342,6 +381,67 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.center-page {
+  margin: 0 20px 28px;
+}
+
+.profile-hero {
+  align-items: center;
+  background: linear-gradient(135deg, rgba(240, 248, 236, 0.98), rgba(235, 247, 253, 0.94));
+  border: 1px solid rgba(143, 191, 134, 0.28);
+  border-radius: 18px;
+  box-shadow: 0 14px 34px rgba(57, 111, 73, 0.1);
+  display: flex;
+  gap: 18px;
+  margin: 0 0 20px;
+  padding: 22px 26px;
+}
+
+.profile-avatar {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #c8e5cd;
+  border-radius: 16px;
+  display: flex;
+  height: 84px;
+  justify-content: center;
+  overflow: hidden;
+  width: 84px;
+}
+
+.profile-avatar img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.profile-avatar.empty {
+  color: #86b78e;
+  font-size: 34px;
+}
+
+.profile-copy {
+  min-width: 0;
+}
+
+.profile-copy span {
+  color: #4f7658;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.profile-copy h2 {
+  color: #102016;
+  font-size: 26px;
+  line-height: 1.2;
+  margin: 8px 0;
+}
+
+.profile-copy p {
+  color: #617168;
+  margin: 0;
+}
+
 .el-date-editor.el-input {
   width: auto;
 }

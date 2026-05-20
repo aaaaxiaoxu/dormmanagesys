@@ -8,13 +8,17 @@
 			</div>
 			<el-form class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
 				<el-row :style='{"display":"block"}' >
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">宿舍名称</label>
 						<el-input v-model="searchForm.sushemingcheng" placeholder="宿舍名称" clearable></el-input>
 					</div>
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">楼栋</label>
 						<el-input v-model="searchForm.susheloudong" placeholder="宿舍楼栋" clearable></el-input>
+					</div>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">房间号</label>
+						<el-input v-model="searchForm.fangjianhao" placeholder="房间号" clearable></el-input>
 					</div>
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select" label="卫生情况" prop="weishengqingkuang">
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">卫生情况</label>
@@ -36,10 +40,10 @@
 				</el-row>
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
-					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">登记检查</el-button>
+					<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','新增') && !isStudentView" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">登记检查</el-button>
 					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','查看')" type="success" icon="el-icon-medal" @click="openHygieneRanking()">评分排行</el-button>
-					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','查看')" type="success" icon="el-icon-download" @click="$exportTable('weishengxinxi')">导出Excel</el-button>
-					<el-button :style='{"border":"2px solid #e0b64a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#9c7427","borderRadius":"40px","background":"#fffaf0","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','新增')" type="warning" icon="el-icon-upload2" @click="$importTable('weishengxinxi', getDataList)">导入Excel</el-button>
+					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','查看') && $storage.get('sessionTable') !== 'xuesheng'" type="success" icon="el-icon-download" @click="$exportTable('weishengxinxi')">导出Excel</el-button>
+					<el-button :style='{"border":"2px solid #e0b64a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#9c7427","borderRadius":"40px","background":"#fffaf0","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','新增') && !isStudentView" type="warning" icon="el-icon-upload2" @click="$importTable('weishengxinxi', getDataList)">导入Excel</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weishengxinxi','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
 
@@ -100,20 +104,6 @@
 					label="房间号">
 						<template slot-scope="scope">
 							{{scope.row.fangjianhao}}
-						</template>
-					</el-table-column>
-					<el-table-column :resizable='true' :sortable='true'  
-						prop="xueshengxuehao"
-					label="学生学号">
-						<template slot-scope="scope">
-							{{scope.row.xueshengxuehao}}
-						</template>
-					</el-table-column>
-					<el-table-column :resizable='true' :sortable='true'  
-						prop="xueshengxingming"
-					label="学生姓名">
-						<template slot-scope="scope">
-							{{scope.row.xueshengxingming}}
 						</template>
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true'  
@@ -315,6 +305,11 @@ export default {
   components: {
     AddOrUpdate,
   },
+  computed: {
+    isStudentView() {
+      return this.$storage.get('sessionTable') === 'xuesheng';
+    }
+  },
   methods: {
 
     contentStyleChange() {
@@ -368,6 +363,9 @@ export default {
           if(this.searchForm.susheloudong!='' && this.searchForm.susheloudong!=undefined){
             params['susheloudong'] = '%' + this.searchForm.susheloudong + '%'
           }
+          if(this.searchForm.fangjianhao!='' && this.searchForm.fangjianhao!=undefined){
+            params['fangjianhao'] = '%' + this.searchForm.fangjianhao + '%'
+          }
            if(this.searchForm.weishengqingkuang!='' && this.searchForm.weishengqingkuang!=undefined){
             params['weishengqingkuang'] = this.searchForm.weishengqingkuang
           }
@@ -405,6 +403,9 @@ export default {
       }
       if(this.searchForm.susheloudong!='' && this.searchForm.susheloudong!=undefined){
         params['susheloudong'] = '%' + this.searchForm.susheloudong + '%'
+      }
+      if(this.searchForm.fangjianhao!='' && this.searchForm.fangjianhao!=undefined){
+        params['fangjianhao'] = '%' + this.searchForm.fangjianhao + '%'
       }
       if(this.searchForm.weishengqingkuang!='' && this.searchForm.weishengqingkuang!=undefined){
         params['weishengqingkuang'] = this.searchForm.weishengqingkuang
@@ -496,8 +497,6 @@ export default {
           susheleixing: row.susheleixing,
           susheloudong: row.susheloudong,
           fangjianhao: row.fangjianhao,
-          xueshengxuehao: row.xueshengxuehao,
-          xueshengxingming: row.xueshengxingming,
           weishengqingkuang: row.weishengqingkuang,
           dengjiriqi: row.dengjiriqi,
 		  pingfen: row.pingfen,

@@ -14,6 +14,14 @@
 							<el-option v-for="(item,index) in susheleixingOptions" v-bind:key="index" :label="item" :value="item"></el-option>
 						</el-select>
 					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">宿舍楼栋</label>
+						<el-input v-model="searchForm.susheloudong" placeholder="宿舍楼栋" clearable></el-input>
+					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">房间号</label>
+						<el-input v-model="searchForm.fangjianhao" placeholder="房间号" clearable></el-input>
+					</div>
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select" label="有床位" prop="youchuangwei">
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">有床位</label>
 						<el-select  @change="youchuangweiChange" clearable v-model="searchForm.youchuangwei" placeholder="请选择有床位">
@@ -26,7 +34,7 @@
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('sushexinxi','新增')" type="success" @click="addOrUpdateHandler()">新增</el-button>
 					<el-button :style='{"border":"2px solid #7d8d63","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#7d8d63","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('sushexinxi','查看')" type="success" @click="refreshDormStats()">重算入住</el-button>
-					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('sushexinxi','查看')" type="success" icon="el-icon-download" @click="$exportTable('sushexinxi')">导出Excel</el-button>
+					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('sushexinxi','查看') && $storage.get('sessionTable') !== 'xuesheng'" type="success" icon="el-icon-download" @click="$exportTable('sushexinxi')">导出Excel</el-button>
 					<el-button :style='{"border":"2px solid #e0b64a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#9c7427","borderRadius":"40px","background":"#fffaf0","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('sushexinxi','新增')" type="warning" icon="el-icon-upload2" @click="$importTable('sushexinxi', getDataList)">导入Excel</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('sushexinxi','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
@@ -155,7 +163,12 @@ export default {
   data() {
     return {
       searchForm: {
-        key: ""
+        key: "",
+        sushemingcheng: "",
+        susheleixing: "",
+        susheloudong: "",
+        fangjianhao: "",
+        youchuangwei: ""
       },
       form:{},
       dataList: [],
@@ -302,6 +315,12 @@ export default {
           }
            if(this.searchForm.susheleixing!='' && this.searchForm.susheleixing!=undefined){
             params['susheleixing'] = this.searchForm.susheleixing
+          }
+           if(this.searchForm.susheloudong!='' && this.searchForm.susheloudong!=undefined){
+            params['susheloudong'] = '%' + this.searchForm.susheloudong + '%'
+          }
+           if(this.searchForm.fangjianhao!='' && this.searchForm.fangjianhao!=undefined){
+            params['fangjianhao'] = '%' + this.searchForm.fangjianhao + '%'
           }
            if(this.searchForm.youchuangwei!='' && this.searchForm.youchuangwei!=undefined){
             params['youchuangwei'] = this.searchForm.youchuangwei

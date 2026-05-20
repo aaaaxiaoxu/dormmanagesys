@@ -12,6 +12,17 @@
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">宿管员姓名</label>
 						<el-input v-model="searchForm.suguanxingming" placeholder="宿管员姓名" clearable></el-input>
 					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select">
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">性别</label>
+						<el-select clearable v-model="searchForm.xingbie" placeholder="性别">
+							<el-option label="男" value="男"></el-option>
+							<el-option label="女" value="女"></el-option>
+						</el-select>
+					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">宿管员电话</label>
+						<el-input v-model="searchForm.dianhua" placeholder="宿管员电话" clearable></el-input>
+					</div>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 20px","outline":"none","margin":"0px 0 5px 0","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' type="success" @click="search()">查询</el-button>
 				</el-row>
 
@@ -122,7 +133,9 @@ export default {
   data() {
     return {
       searchForm: {
-        key: ""
+        key: "",
+        xingbie: "",
+        dianhua: ""
       },
       form:{},
       dataList: [],
@@ -209,6 +222,12 @@ export default {
           }
            if(this.searchForm.suguanxingming!='' && this.searchForm.suguanxingming!=undefined){
             params['suguanxingming'] = '%' + this.searchForm.suguanxingming + '%'
+          }
+           if(this.searchForm.xingbie!='' && this.searchForm.xingbie!=undefined){
+            params['xingbie'] = this.searchForm.xingbie
+          }
+           if(this.searchForm.dianhua!='' && this.searchForm.dianhua!=undefined){
+            params['dianhua'] = '%' + this.searchForm.dianhua + '%'
           }
       this.$http({
         url: "suguan/page",

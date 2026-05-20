@@ -12,6 +12,25 @@
 							<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生姓名</label>
 							<el-input v-model="searchForm.xueshengxingming" placeholder="学生姓名" clearable></el-input>
 						</div>
+						<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select">
+							<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">性别</label>
+							<el-select clearable v-model="searchForm.xingbie" placeholder="性别">
+								<el-option label="男" value="男"></el-option>
+								<el-option label="女" value="女"></el-option>
+							</el-select>
+						</div>
+						<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+							<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生电话</label>
+							<el-input v-model="searchForm.xueshengdianhua" placeholder="学生电话" clearable></el-input>
+						</div>
+						<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+							<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">班级</label>
+							<el-input v-model="searchForm.banji" placeholder="班级" clearable></el-input>
+						</div>
+						<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+							<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">专业</label>
+							<el-input v-model="searchForm.zhuanye" placeholder="专业" clearable></el-input>
+						</div>
 						<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 							<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">建档状态</label>
 							<el-select clearable v-model="searchForm.faceStatus" placeholder="建档状态">
@@ -24,7 +43,7 @@
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('xuesheng','新增')" type="success" @click="addOrUpdateHandler()">新增</el-button>
-					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('xuesheng','查看')" type="success" icon="el-icon-download" @click="$exportTable('xuesheng')">导出Excel</el-button>
+					<el-button :style='{"border":"2px solid #6bbf7b","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#477a4f","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('xuesheng','查看') && $storage.get('sessionTable') !== 'xuesheng'" type="success" icon="el-icon-download" @click="$exportTable('xuesheng')">导出Excel</el-button>
 					<el-button :style='{"border":"2px solid #e0b64a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#9c7427","borderRadius":"40px","background":"#fffaf0","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('xuesheng','新增')" type="warning" icon="el-icon-upload2" @click="$importTable('xuesheng', getDataList)">导入Excel</el-button>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('xuesheng','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
@@ -149,7 +168,11 @@ export default {
     return {
 	      searchForm: {
 	        key: "",
-	        faceStatus: ""
+	        faceStatus: "",
+	        xingbie: "",
+	        xueshengdianhua: "",
+	        banji: "",
+	        zhuanye: ""
 	      },
       form:{},
       dataList: [],
@@ -257,6 +280,18 @@ export default {
           }
            if(this.searchForm.xueshengxingming!='' && this.searchForm.xueshengxingming!=undefined){
             params['xueshengxingming'] = '%' + this.searchForm.xueshengxingming + '%'
+          }
+           if(this.searchForm.xingbie!='' && this.searchForm.xingbie!=undefined){
+            params['xingbie'] = this.searchForm.xingbie
+          }
+           if(this.searchForm.xueshengdianhua!='' && this.searchForm.xueshengdianhua!=undefined){
+            params['xueshengdianhua'] = '%' + this.searchForm.xueshengdianhua + '%'
+          }
+           if(this.searchForm.banji!='' && this.searchForm.banji!=undefined){
+            params['banji'] = '%' + this.searchForm.banji + '%'
+          }
+           if(this.searchForm.zhuanye!='' && this.searchForm.zhuanye!=undefined){
+            params['zhuanye'] = '%' + this.searchForm.zhuanye + '%'
           }
       this.$http({
         url: "xuesheng/page",

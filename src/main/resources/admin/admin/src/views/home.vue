@@ -4,13 +4,10 @@
       <div class="hero-copy">
         <div class="hero-badge">
           <i class="el-icon-data-analysis"></i>
-          宿舍管理数据统计大屏
+          {{ homeBadge }}
         </div>
-        <h1>系统运行全景总览</h1>
-        <p>
-          集成公告播报、入住率、报修处理、请假审核、水电费、论坛互动和考勤统计，
-          让管理员与宿管员在首页就能看到宿舍运行情况。
-        </p>
+        <h1>{{ homeTitle }}</h1>
+        <p>{{ homeDescription }}</p>
       </div>
 
       <div class="notice-player">
@@ -64,7 +61,7 @@
       </div>
     </section>
 
-    <section class="metric-grid">
+    <section v-if="!isStudentView" class="metric-grid">
       <div class="metric-card blue-card">
         <div class="metric-icon"><i class="el-icon-house"></i></div>
         <div class="metric-value">{{ dashboard.occupancyRate }}%</div>
@@ -103,7 +100,7 @@
       </div>
     </section>
 
-    <section class="chart-grid">
+    <section v-if="!isStudentView" class="chart-grid">
       <div class="chart-card wide-card">
         <div class="chart-head">
           <div>
@@ -165,6 +162,88 @@
       </div>
     </section>
 
+    <section v-if="isStudentView" class="student-home" v-loading="studentHomeLoading">
+      <div class="student-overview">
+        <div class="student-dorm-card">
+          <div class="student-card-head">
+            <i class="el-icon-house"></i>
+            <span>当前宿舍</span>
+          </div>
+          <div class="student-dorm-name">{{ studentHome.dorm.sushemingcheng || "暂未分配宿舍" }}</div>
+          <div class="student-dorm-meta">
+            <span>{{ studentHome.dorm.susheloudong || "-" }}</span>
+            <span>{{ studentHome.dorm.fangjianhao || "-" }}</span>
+            <span>{{ studentHome.dorm.chuangweihao || "-" }}</span>
+          </div>
+        </div>
+        <div class="student-status-card warning">
+          <span>未支付水电费</span>
+          <strong>{{ studentHome.unpaidFees }}</strong>
+        </div>
+        <div class="student-status-card">
+          <span>报修待处理</span>
+          <strong>{{ studentHome.pendingRepairs }}</strong>
+        </div>
+        <div class="student-status-card">
+          <span>请假待审核</span>
+          <strong>{{ studentHome.pendingLeaves }}</strong>
+        </div>
+        <div class="student-status-card">
+          <span>本月考勤异常</span>
+          <strong>{{ studentHome.attendanceIssues }}</strong>
+        </div>
+      </div>
+
+      <div class="student-detail-grid">
+        <div class="student-panel">
+          <div class="student-panel-head">
+            <h3>同宿舍成员</h3>
+            <span>{{ studentHome.roommates.length }} 人</span>
+          </div>
+          <div v-if="studentHome.roommates.length" class="roommate-list">
+            <div v-for="item in studentHome.roommates" :key="item.id || item.xueshengxuehao" class="roommate-row">
+              <div>
+                <strong>{{ item.xueshengxingming || "-" }}</strong>
+                <span>{{ item.xueshengxuehao || "-" }}</span>
+              </div>
+              <em>{{ item.chuangweihao || "-" }}</em>
+            </div>
+          </div>
+          <div v-else class="student-empty">暂无同宿舍成员记录</div>
+        </div>
+
+        <div class="student-panel">
+          <div class="student-panel-head">
+            <h3>近期水电费</h3>
+            <span>{{ studentHome.recentFees.length }} 条</span>
+          </div>
+          <div v-if="studentHome.recentFees.length" class="fee-list">
+            <div v-for="item in studentHome.recentFees" :key="item.id" class="fee-row">
+              <div>
+                <strong>{{ item.yuefen || "未填月份" }}</strong>
+                <span>{{ item.dengjishijian || "" }}</span>
+              </div>
+              <em :class="{ unpaid: item.ispay !== '已支付' }">{{ item.ispay === "已支付" ? "已支付" : "未支付" }}</em>
+            </div>
+          </div>
+          <div v-else class="student-empty">暂无水电费记录</div>
+        </div>
+
+        <div class="student-panel">
+          <div class="student-panel-head">
+            <h3>卫生记录</h3>
+            <span>最新 {{ studentHome.latestHygiene.pingfen || "-" }} 分</span>
+          </div>
+          <div v-if="studentHome.latestHygiene.id" class="hygiene-card">
+            <strong>{{ studentHome.latestHygiene.weishengqingkuang || "-" }}</strong>
+            <span>{{ studentHome.latestHygiene.dengjiriqi || "" }}</span>
+            <p>{{ stripHtml(studentHome.latestHygiene.xiangqing) || "暂无评语" }}</p>
+          </div>
+          <div v-else class="student-empty">暂无卫生检查记录</div>
+        </div>
+      </div>
+    </section>
+
     <section class="admin-panel" v-if="sessionTable == 'users'">
       <div class="admin-head">
         <div>
@@ -177,7 +256,7 @@
         <div class="upload-tip">请上传人脸照片进行识别（模拟门禁）</div>
         <el-upload
           class="upload-demo"
-          action="dormmanagesys/file/upload2"
+          :action="`/${$base.name}/file/upload2`"
           :on-success="handleSuccess"
           :on-error="handleError"
           :before-upload="beforeUpload"
@@ -269,10 +348,37 @@ export default {
         fees: [],
         forums: [],
         attendance: []
+      },
+      studentHomeLoading: false,
+      studentHome: {
+        profile: {},
+        dorm: {},
+        roommates: [],
+        unpaidFees: 0,
+        pendingRepairs: 0,
+        pendingLeaves: 0,
+        attendanceIssues: 0,
+        recentFees: [],
+        latestHygiene: {}
       }
     };
   },
   computed: {
+    isStudentView() {
+      return this.sessionTable === "xuesheng";
+    },
+    homeBadge() {
+      return this.isStudentView ? "我的宿舍信息" : "宿舍管理数据统计大屏";
+    },
+    homeTitle() {
+      return this.isStudentView ? "个人宿舍概览" : "系统运行全景总览";
+    },
+    homeDescription() {
+      if (this.isStudentView) {
+        return "展示当前宿舍、同宿舍成员、水电费、报修、请假、卫生和考勤记录。";
+      }
+      return "集成公告播报、入住率、报修处理、请假审核、水电费、论坛互动和考勤统计，让管理员与宿管员在首页就能看到宿舍运行情况。";
+    },
     noticeRoleLabel() {
       if (this.sessionTable === "xuesheng") {
         return "学生";
@@ -304,7 +410,11 @@ export default {
     this.userId = this.$storage.get("userId");
     this.init();
     this.getNoticeList();
-    this.loadDashboardData();
+    if (this.isStudentView) {
+      this.loadStudentHomeData();
+    } else {
+      this.loadDashboardData();
+    }
     window.addEventListener("resize", this.handleResize);
   },
   beforeDestroy() {
@@ -369,6 +479,9 @@ export default {
       });
     },
     loadDashboardData() {
+      if (this.isStudentView) {
+        return;
+      }
       const buildParams = (sortField = "id") => ({
         page: 1,
         limit: 1000,
@@ -401,6 +514,68 @@ export default {
         });
       }).catch(() => {
         this.$message.error("统计数据加载失败，请稍后重试");
+      });
+    },
+    async loadStudentHomeData() {
+      this.studentHomeLoading = true;
+      try {
+        const sessionRes = await this.$http({
+          url: "xuesheng/session",
+          method: "get"
+        });
+        const profile = sessionRes && sessionRes.data && sessionRes.data.code === 0 ? (sessionRes.data.data || {}) : {};
+        const studentNo = profile.xueshengxuehao || this.$storage.get("adminName") || "";
+        const allocationPage = await this.fetchPageData("sushefenpei/page", {
+          page: 1,
+          limit: 1000,
+          sort: "id",
+          order: "desc"
+        });
+        const allocations = allocationPage.list || [];
+        const dorm = allocations.find(item => item.xueshengxuehao === studentNo) || allocations[0] || {};
+
+        const [feesPage, repairsPage, leavesPage, attendancePage, hygienePage] = await Promise.all([
+          this.fetchPageData("shuidianfei/page", { page: 1, limit: 1000, sort: "dengjishijian", order: "desc" }),
+          this.fetchPageData("weixiuxinxi/page", { page: 1, limit: 1000, sort: "weixiuriqi", order: "desc" }),
+          this.fetchPageData("qingjia/page", { page: 1, limit: 1000, sort: "addtime", order: "desc" }),
+          this.fetchPageData("kaoqinxinxi/page", { page: 1, limit: 1000, sort: "dengjishijian", order: "desc" }),
+          this.fetchPageData("weishengxinxi/page", { page: 1, limit: 1000, sort: "dengjiriqi", order: "desc" })
+        ]);
+
+        const fees = feesPage.list || [];
+        const repairs = repairsPage.list || [];
+        const leaves = leavesPage.list || [];
+        const attendance = attendancePage.list || [];
+        const hygiene = hygienePage.list || [];
+        this.studentHome = {
+          profile,
+          dorm,
+          roommates: allocations,
+          unpaidFees: fees.filter(item => item.ispay !== "已支付").length,
+          pendingRepairs: repairs.filter(item => !item.sfsh || item.sfsh === "待审核" || item.sfsh === "待处理" || item.sfsh === "维修中").length,
+          pendingLeaves: leaves.filter(item => !item.sfsh || item.sfsh === "待审核").length,
+          attendanceIssues: attendance.reduce((sum, item) => {
+            return sum + this.toNumber(item.wanguitianshu) + this.toNumber(item.queqintianshu);
+          }, 0),
+          recentFees: fees.slice(0, 5),
+          latestHygiene: hygiene[0] || {}
+        };
+      } catch (error) {
+        this.$message.error("个人宿舍信息加载失败，请稍后重试");
+      } finally {
+        this.studentHomeLoading = false;
+      }
+    },
+    fetchPageData(url, params) {
+      return this.$http({
+        url,
+        method: "get",
+        params
+      }).then(({ data }) => {
+        if (data && data.code === 0 && data.data) {
+          return data.data;
+        }
+        return { list: [], total: 0 };
       });
     },
     getListData(response) {
@@ -448,6 +623,9 @@ export default {
       };
     },
     renderCharts() {
+      if (this.isStudentView) {
+        return;
+      }
       this.disposeCharts();
       this.renderBuildingChart();
       this.renderRepairChart();
@@ -902,6 +1080,9 @@ export default {
       const num = Number(value);
       return Number.isFinite(num) ? num : 0;
     },
+    stripHtml(value) {
+      return String(value || "").replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").trim();
+    },
     openNotice(item) {
       this.selectedNotice = { ...item };
       this.noticeDialogVisible = true;
@@ -1225,6 +1406,184 @@ export default {
 .cyan-card { background: linear-gradient(160deg, #5f7668, #728b7c); }
 .dark-card { background: linear-gradient(160deg, #5a6354, #6b7564); }
 
+.student-home {
+  margin-top: 22px;
+}
+
+.student-overview,
+.student-detail-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.student-overview {
+  grid-template-columns: minmax(260px, 1.5fr) repeat(4, minmax(130px, 1fr));
+}
+
+.student-detail-grid {
+  margin-top: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.student-dorm-card,
+.student-status-card,
+.student-panel {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.student-dorm-card {
+  padding: 22px;
+  background: linear-gradient(135deg, rgba(240, 248, 236, 0.96), rgba(236, 247, 252, 0.9));
+}
+
+.student-card-head,
+.student-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.student-card-head {
+  justify-content: flex-start;
+  color: #4f6b55;
+  font-weight: 700;
+}
+
+.student-dorm-name {
+  margin-top: 18px;
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.student-dorm-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.student-dorm-meta span {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #526358;
+}
+
+.student-status-card {
+  padding: 18px;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.student-status-card span {
+  color: #64748b;
+  font-weight: 700;
+}
+
+.student-status-card strong {
+  color: #102016;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.student-status-card.warning strong,
+.fee-row em.unpaid {
+  color: #cf5f2a;
+}
+
+.student-panel {
+  padding: 20px;
+  min-height: 250px;
+}
+
+.student-panel-head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+}
+
+.student-panel-head span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.roommate-list,
+.fee-list {
+  margin-top: 16px;
+}
+
+.roommate-row,
+.fee-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.roommate-row:last-child,
+.fee-row:last-child {
+  border-bottom: 0;
+}
+
+.roommate-row strong,
+.fee-row strong {
+  display: block;
+  color: #0f172a;
+}
+
+.roommate-row span,
+.fee-row span,
+.hygiene-card span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.roommate-row em,
+.fee-row em {
+  color: #4f6b55;
+  font-style: normal;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hygiene-card {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.hygiene-card strong {
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.hygiene-card p {
+  margin: 12px 0 0;
+  color: #475569;
+  line-height: 1.7;
+}
+
+.student-empty {
+  margin-top: 18px;
+  padding: 28px 16px;
+  border-radius: 16px;
+  background: #f8fafc;
+  color: #94a3b8;
+  text-align: center;
+}
+
 .metric-icon {
   width: 48px;
   height: 48px;
@@ -1358,6 +1717,11 @@ export default {
   .chart-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .student-overview,
+  .student-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1100px) {
@@ -1378,7 +1742,9 @@ export default {
   }
 
   .metric-grid,
-  .chart-grid {
+  .chart-grid,
+  .student-overview,
+  .student-detail-grid {
     grid-template-columns: 1fr;
   }
 

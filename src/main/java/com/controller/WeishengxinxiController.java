@@ -28,9 +28,11 @@ import com.baomidou.mybatisplus.mapper.Wrapper;
 import com.annotation.IgnoreAuth;
 
 import com.entity.WeishengxinxiEntity;
+import com.entity.SushefenpeiEntity;
 import com.entity.view.WeishengxinxiView;
 
 import com.service.WeishengxinxiService;
+import com.service.SushefenpeiService;
 import com.service.TokenService;
 import com.utils.PageUtils;
 import com.utils.R;
@@ -51,6 +53,8 @@ import java.io.IOException;
 public class WeishengxinxiController {
     @Autowired
     private WeishengxinxiService weishengxinxiService;
+    @Autowired
+    private SushefenpeiService sushefenpeiService;
 
 
     
@@ -64,7 +68,15 @@ public class WeishengxinxiController {
 		HttpServletRequest request){
 		String tableName = request.getSession().getAttribute("tableName").toString();
 		if(tableName.equals("xuesheng")) {
-			weishengxinxi.setXueshengxuehao((String)request.getSession().getAttribute("username"));
+			SushefenpeiEntity currentDorm = getCurrentStudentDorm((String)request.getSession().getAttribute("username"));
+			if(currentDorm != null) {
+				weishengxinxi.setSushemingcheng(currentDorm.getSushemingcheng());
+				weishengxinxi.setSusheleixing(currentDorm.getSusheleixing());
+				weishengxinxi.setSusheloudong(currentDorm.getSusheloudong());
+				weishengxinxi.setFangjianhao(currentDorm.getFangjianhao());
+			} else {
+				weishengxinxi.setId(-1L);
+			}
 		}
         EntityWrapper<WeishengxinxiEntity> ew = new EntityWrapper<WeishengxinxiEntity>();
 
@@ -136,6 +148,7 @@ public class WeishengxinxiController {
     public R save(@RequestBody WeishengxinxiEntity weishengxinxi, HttpServletRequest request){
     	weishengxinxi.setId(new Date().getTime()+new Double(Math.floor(Math.random()*1000)).longValue());
     	//ValidatorUtils.validateEntity(weishengxinxi);
+        normalizeDormInspection(weishengxinxi);
         weishengxinxiService.insert(weishengxinxi);
         return R.ok();
     }
@@ -147,6 +160,7 @@ public class WeishengxinxiController {
     public R add(@RequestBody WeishengxinxiEntity weishengxinxi, HttpServletRequest request){
     	weishengxinxi.setId(new Date().getTime()+new Double(Math.floor(Math.random()*1000)).longValue());
     	//ValidatorUtils.validateEntity(weishengxinxi);
+        normalizeDormInspection(weishengxinxi);
         weishengxinxiService.insert(weishengxinxi);
         return R.ok();
     }
@@ -160,6 +174,7 @@ public class WeishengxinxiController {
     @Transactional
     public R update(@RequestBody WeishengxinxiEntity weishengxinxi, HttpServletRequest request){
         //ValidatorUtils.validateEntity(weishengxinxi);
+        normalizeDormInspection(weishengxinxi);
         weishengxinxiService.updateById(weishengxinxi);//全部更新
         return R.ok();
     }
@@ -200,6 +215,23 @@ public class WeishengxinxiController {
 
 
 
+
+    private SushefenpeiEntity getCurrentStudentDorm(String username) {
+        if(StringUtils.isBlank(username)) {
+            return null;
+        }
+        EntityWrapper<SushefenpeiEntity> wrapper = new EntityWrapper<SushefenpeiEntity>();
+        wrapper.eq("xueshengxuehao", username);
+        return sushefenpeiService.selectOne(wrapper);
+    }
+
+    private void normalizeDormInspection(WeishengxinxiEntity weishengxinxi) {
+        if(weishengxinxi == null) {
+            return;
+        }
+        weishengxinxi.setXueshengxuehao(null);
+        weishengxinxi.setXueshengxingming(null);
+    }
 
 
 

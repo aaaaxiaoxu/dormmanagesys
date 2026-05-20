@@ -4,9 +4,9 @@
 			:rules="rules" label-width="140px">
 			<template>
 				<el-form-item :style='{ "width": "100%", "margin": "0 0 20px 0", "display": "inline-block" }' class="select"
-					v-if="type != 'info' && !ruleForm.id" label="选择学生" prop="selectedAllocationNo">
-					<el-select v-model="ruleForm.selectedAllocationNo" placeholder="请选择学生" filterable @change="onAllocationChange">
-						<el-option v-for="item in allocationOptions" :key="item.value" :label="item.label" :value="item.value">
+					v-if="type != 'info' && !ruleForm.id && !ruleForm.sushemingcheng" label="选择宿舍" prop="selectedDormKey">
+					<el-select v-model="ruleForm.selectedDormKey" placeholder="请选择宿舍" filterable @change="onDormChange">
+						<el-option v-for="item in dormSelectOptions" :key="item.value" :label="item.label" :value="item.value">
 						</el-option>
 					</el-select>
 				</el-form-item>
@@ -45,24 +45,6 @@
 				<el-form-item :style='{ "width": "100%", "margin": "0 0 20px 0", "display": "inline-block" }' v-else
 					class="input" label="房间号" prop="fangjianhao">
 					<el-input v-model="ruleForm.fangjianhao" placeholder="房间号" readonly></el-input>
-				</el-form-item>
-				<el-form-item :style='{ "width": "100%", "margin": "0 0 20px 0", "display": "inline-block" }' class="input"
-					v-if="type != 'info'" label="学生学号" prop="xueshengxuehao">
-					<el-input v-model="ruleForm.xueshengxuehao" placeholder="学生学号" clearable
-						:readonly="ro.xueshengxuehao"></el-input>
-				</el-form-item>
-				<el-form-item :style='{ "width": "100%", "margin": "0 0 20px 0", "display": "inline-block" }' v-else
-					class="input" label="学生学号" prop="xueshengxuehao">
-					<el-input v-model="ruleForm.xueshengxuehao" placeholder="学生学号" readonly></el-input>
-				</el-form-item>
-				<el-form-item :style='{ "width": "100%", "margin": "0 0 20px 0", "display": "inline-block" }' class="input"
-					v-if="type != 'info'" label="学生姓名" prop="xueshengxingming">
-					<el-input v-model="ruleForm.xueshengxingming" placeholder="学生姓名" clearable
-						:readonly="ro.xueshengxingming"></el-input>
-				</el-form-item>
-				<el-form-item :style='{ "width": "100%", "margin": "0 0 20px 0", "display": "inline-block" }' v-else
-					class="input" label="学生姓名" prop="xueshengxingming">
-					<el-input v-model="ruleForm.xueshengxingming" placeholder="学生姓名" readonly></el-input>
 				</el-form-item>
 				<el-form-item :style='{ "width": "100%", "margin": "0 0 20px 0", "display": "inline-block" }' class="select"
 					v-if="type != 'info'" label="卫生情况" prop="weishengqingkuang">
@@ -195,13 +177,13 @@ export default {
 				callback();
 			}
 		};
-		var validateAllocationRequired = (rule, value, callback) => {
+		var validateDormRequired = (rule, value, callback) => {
 			if (self.ruleForm.id) {
 				callback();
 				return;
 			}
-			if (!value) {
-				callback(new Error("请选择学生"));
+			if (!value && !self.ruleForm.sushemingcheng) {
+				callback(new Error("请选择宿舍"));
 				return;
 			}
 			callback();
@@ -209,8 +191,8 @@ export default {
 		return {
 			id: '',
 			type: '',
-			allocationOptions: [],
-			allocationOptionsRaw: [],
+			dormOptions: [],
+			dormSelectOptions: [],
 
 
 			ro: {
@@ -218,8 +200,6 @@ export default {
 				susheleixing: true,
 				susheloudong: true,
 				fangjianhao: true,
-				xueshengxuehao: true,
-				xueshengxingming: true,
 				weishengqingkuang: false,
 				pingfen: false,
 				dengjiriqi: false,
@@ -234,29 +214,25 @@ export default {
 				susheleixing: '',
 				susheloudong: '',
 				fangjianhao: '',
-				xueshengxuehao: '',
-				xueshengxingming: '',
 				weishengqingkuang: '',
 				pingfen: '',
 				dengjiriqi: '',
 				xiangqing: '',
 				shhf: '',
-				selectedAllocationNo: '',
+				selectedDormKey: '',
 			},
 
 			weishengqingkuangOptions: [],
 
 
 			rules: {
-				selectedAllocationNo: [
-					{ validator: validateAllocationRequired, trigger: 'change' }
+				selectedDormKey: [
+					{ validator: validateDormRequired, trigger: 'change' }
 				],
 				sushemingcheng: [],
 				susheleixing: [],
 				susheloudong: [],
 				fangjianhao: [],
-				xueshengxuehao: [],
-				xueshengxingming: [],
 				weishengqingkuang: [
 					{ required: true, message: '请选择卫生情况', trigger: 'change' }
 				],
@@ -287,20 +263,23 @@ export default {
 		this.ruleForm.dengjiriqi = this.getCurDate()
 	},
 	methods: {
-		onAllocationChange(value) {
-			const allocation = this.allocationOptionsRaw.find(item => item.xueshengxuehao === value);
-			if (!allocation) {
+		buildDormKey(item) {
+			return [item.sushemingcheng, item.susheleixing, item.susheloudong, item.fangjianhao].join('|');
+		},
+		onDormChange(value) {
+			const dorm = this.dormOptions.find(item => this.buildDormKey(item) === value);
+			if (!dorm) {
 				return;
 			}
-			this.ruleForm.sushemingcheng = allocation.sushemingcheng || '';
-			this.ruleForm.susheleixing = allocation.susheleixing || '';
-			this.ruleForm.susheloudong = allocation.susheloudong || '';
-			this.ruleForm.fangjianhao = allocation.fangjianhao || '';
-			this.ruleForm.xueshengxuehao = allocation.xueshengxuehao || '';
-			this.ruleForm.xueshengxingming = allocation.xueshengxingming || '';
+			this.ruleForm.sushemingcheng = dorm.sushemingcheng || '';
+			this.ruleForm.susheleixing = dorm.susheleixing || '';
+			this.ruleForm.susheloudong = dorm.susheloudong || '';
+			this.ruleForm.fangjianhao = dorm.fangjianhao || '';
 		},
 		normalizeHygieneForm() {
 			this.ruleForm.pingfen = String(this.ruleForm.pingfen || '').trim();
+			this.ruleForm.xueshengxuehao = '';
+			this.ruleForm.xueshengxingming = '';
 		},
 
 		// 下载
@@ -339,16 +318,6 @@ export default {
 					if (o == 'fangjianhao') {
 						this.ruleForm.fangjianhao = obj[o];
 						this.ro.fangjianhao = true;
-						continue;
-					}
-					if (o == 'xueshengxuehao') {
-						this.ruleForm.xueshengxuehao = obj[o];
-						this.ro.xueshengxuehao = true;
-						continue;
-					}
-					if (o == 'xueshengxingming') {
-						this.ruleForm.xueshengxingming = obj[o];
-						this.ro.xueshengxingming = true;
 						continue;
 					}
 					if (o == 'weishengqingkuang') {
@@ -394,9 +363,9 @@ export default {
 					this.$message.error(data.msg);
 				}
 			});
-			if (!this.id) {
+			if (!this.id && !this.ruleForm.sushemingcheng) {
 				this.$http({
-					url: "sushefenpei/list",
+					url: "sushexinxi/list",
 					method: "get",
 					params: {
 						page: 1,
@@ -406,10 +375,10 @@ export default {
 					}
 				}).then(({ data }) => {
 					if (data && data.code === 0) {
-						this.allocationOptionsRaw = data.data.list || [];
-						this.allocationOptions = this.allocationOptionsRaw.map(item => ({
-							value: item.xueshengxuehao,
-							label: `${item.xueshengxingming || '-'} (${item.xueshengxuehao || '-'}) / ${item.sushemingcheng || '-'} / ${item.susheloudong || '-'} / ${item.fangjianhao || '-'}`
+						this.dormOptions = data.data.list || [];
+						this.dormSelectOptions = this.dormOptions.map(item => ({
+							value: this.buildDormKey(item),
+							label: `${item.sushemingcheng || '-'} / ${item.susheleixing || '-'} / ${item.susheloudong || '-'} / ${item.fangjianhao || '-'}`
 						}));
 					} else {
 						this.$message.error(data.msg);
@@ -431,7 +400,7 @@ export default {
 					this.ruleForm = data.data;
 					//解决前台上传图片后台不显示的问题
 					let reg = new RegExp('../../../upload', 'g')//g代表全部
-					this.ruleForm.xiangqing = this.ruleForm.xiangqing.replace(reg, '../../../dormmanagesys/upload');
+					this.ruleForm.xiangqing = (this.ruleForm.xiangqing || '').replace(reg, '../../../dormmanagesys/upload');
 				} else {
 					this.$message.error(data.msg);
 				}

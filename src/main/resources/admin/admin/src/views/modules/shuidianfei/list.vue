@@ -4,13 +4,20 @@
 		<template v-if="showFlag">
 			<el-form class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
 				<el-row :style='{"display":"block"}' >
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">宿舍名称</label>
 						<el-input v-model="searchForm.sushemingcheng" placeholder="宿舍名称" clearable></el-input>
 					</div>
-					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
+					<div v-if="!isStudentView" :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">学生姓名</label>
 						<el-input v-model="searchForm.xueshengxingming" placeholder="学生姓名" clearable></el-input>
+					</div>
+					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}' class="select">
+						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">支付状态</label>
+						<el-select clearable v-model="searchForm.ispay" placeholder="支付状态">
+							<el-option label="已支付" value="已支付"></el-option>
+							<el-option label="未支付" value="未支付"></el-option>
+						</el-select>
 					</div>
 					<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 20px","outline":"none","margin":"0px 0 5px 0","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' type="success" @click="search()">查询</el-button>
 				</el-row>
@@ -93,14 +100,16 @@
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true'  
 						prop="xueshengxuehao"
-					label="学生学号">
+					label="学生学号"
+					v-if="!isStudentView">
 						<template slot-scope="scope">
 							{{scope.row.xueshengxuehao}}
 						</template>
 					</el-table-column>
 					<el-table-column :resizable='true' :sortable='true'  
 						prop="xueshengxingming"
-					label="学生姓名">
+					label="学生姓名"
+					v-if="!isStudentView">
 						<template slot-scope="scope">
 							{{scope.row.xueshengxingming}}
 						</template>
@@ -206,6 +215,11 @@ export default {
   components: {
     AddOrUpdate,
   },
+  computed: {
+    isStudentView() {
+      return this.$storage.get('sessionTable') === 'xuesheng';
+    }
+  },
   methods: {
 
     contentStyleChange() {
@@ -260,6 +274,9 @@ export default {
           }
            if(this.searchForm.xueshengxingming!='' && this.searchForm.xueshengxingming!=undefined){
             params['xueshengxingming'] = '%' + this.searchForm.xueshengxingming + '%'
+          }
+           if(this.searchForm.ispay!='' && this.searchForm.ispay!=undefined){
+            params['ispay'] = this.searchForm.ispay
           }
       this.$http({
         url: "shuidianfei/page",

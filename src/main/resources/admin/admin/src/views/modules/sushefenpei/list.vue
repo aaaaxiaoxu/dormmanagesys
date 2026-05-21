@@ -10,7 +10,7 @@
 				<i class="el-icon-office-building"></i>
 				<span>新增用于首次分配；换宿/换床请使用修改；退宿请使用删除，系统会自动同步宿舍人数和床位状态。</span>
 			</div>
-			<el-form class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
+			<el-form v-if="!isStudentView" class="center-form-pv" :style='{"width":"180px","margin":"0 0 20px 20px","position":"absolute","zIndex":"1003"}' :inline="true" :model="searchForm">
 				<el-row :style='{"display":"block"}' >
 					<div :style='{"margin":"0 0px 15px 0","display":"inline-block"}'>
 						<label :style='{"margin":"0 10px 0 0","color":"#666","textAlign":"center","display":"inline-block","width":"auto","lineHeight":"40px","fontSize":"14px","fontWeight":"500","height":"40px"}' class="item-label">宿舍名称</label>
@@ -39,12 +39,12 @@
 			<!-- <div> -->
 				<el-table class="tables"
 					:stripe='false'
-					:style='{"padding":"0","boxShadow":" 0px 4px 10px 0px rgba(0,0,0,0.3020)","borderColor":"#eee","margin":"0 0 15px 210px","borderWidth":"1px 0 0 1px","background":"#fff","width":"calc(100% - 230px)","borderStyle":"solid"}' 
+					:style="tableStyle"
 					v-if="isAuth('sushefenpei','查看')"
 					:data="dataList"
 					v-loading="dataListLoading"
 				@selection-change="selectionChangeHandler">
-					<el-table-column :resizable='true' type="selection" align="center" width="50"></el-table-column>
+					<el-table-column v-if="!isStudentView" :resizable='true' type="selection" align="center" width="50"></el-table-column>
 					<el-table-column :resizable='true' :sortable='true' label="序号" type="index" width="50" />
 					<el-table-column :resizable='true' :sortable='true'  
 						prop="sushemingcheng"
@@ -102,7 +102,7 @@
 							{{scope.row.fenpeiriqi}}
 						</template>
 					</el-table-column>
-					<el-table-column width="300" label="操作">
+					<el-table-column v-if="!isStudentView" width="300" label="操作">
 						<template slot-scope="scope">
 							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if=" isAuth('sushefenpei','查看')" type="success" size="mini" @click="addOrUpdateHandler(scope.row.id,'info')">详情</el-button>
 							<el-button :style='{"border":"1px solid rgba(135, 154, 108, 1)","cursor":"pointer","padding":"0 10px","margin":"0 10px 5px 0","outline":"none","color":"rgba(135, 154, 108, 1)","borderRadius":"4px","background":"#fff","width":"auto","fontSize":"14px","height":"32px"}' v-if="isAuth('sushefenpei','水电费')" type="success" size="mini" @click="shuidianfeiCrossAddOrUpdateHandler(scope.row,'cross','','','')">水电费</el-button>
@@ -133,7 +133,7 @@
 					prev-text="<"
 					next-text=">"
 					:hide-on-single-page="false"
-					:style='{"padding":"0","margin":"20px 0 10px 210px","whiteSpace":"nowrap","color":"#333","textAlign":"center","width":"calc(100% - 230px)","fontWeight":"500"}'
+					:style="paginationStyle"
 				></el-pagination>
 			<!-- </div> -->
 		</template>
@@ -346,6 +346,18 @@ export default {
   computed: {
     isStudentView() {
       return this.$storage.get('sessionTable') === 'xuesheng';
+    },
+    tableStyle() {
+      if (this.isStudentView) {
+        return {"padding":"0","boxShadow":"0px 4px 10px 0px rgba(0,0,0,0.3020)","borderColor":"#eee","margin":"0 20px 15px","borderWidth":"1px 0 0 1px","background":"#fff","width":"calc(100% - 40px)","borderStyle":"solid"};
+      }
+      return {"padding":"0","boxShadow":"0px 4px 10px 0px rgba(0,0,0,0.3020)","borderColor":"#eee","margin":"0 0 15px 210px","borderWidth":"1px 0 0 1px","background":"#fff","width":"calc(100% - 230px)","borderStyle":"solid"};
+    },
+    paginationStyle() {
+      if (this.isStudentView) {
+        return {"padding":"0","margin":"20px 20px 10px","whiteSpace":"nowrap","color":"#333","textAlign":"center","width":"calc(100% - 40px)","fontWeight":"500"};
+      }
+      return {"padding":"0","margin":"20px 0 10px 210px","whiteSpace":"nowrap","color":"#333","textAlign":"center","width":"calc(100% - 230px)","fontWeight":"500"};
     }
   },
   created() {

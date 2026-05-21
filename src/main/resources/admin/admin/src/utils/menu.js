@@ -278,7 +278,7 @@ const menu = {
             child: [
               {
                 appFrontIcon: "cuIcon-rank",
-                buttons: ["查看", "维修", "卫生"],
+                buttons: ["查看"],
                 menu: "我的宿舍",
                 menuJump: "列表",
                 tableName: "sushefenpei",

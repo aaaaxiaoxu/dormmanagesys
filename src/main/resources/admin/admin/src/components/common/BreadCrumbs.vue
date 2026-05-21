@@ -14,6 +14,8 @@
 <script>
 import pathToRegexp from 'path-to-regexp'
 import { generateTitle } from '@/utils/i18n'
+import menu from '@/utils/menu'
+import storage from '@/utils/storage'
 export default {
   data() {
     return {
@@ -34,10 +36,42 @@ export default {
       // only show routes with meta.title
       let route = this.$route
       let matched = route.matched.filter(item => item.meta)
-      const first = matched[0]
       matched = [{ path: '/index' }].concat(matched)
 
-      this.levelList = matched.filter(item => item.meta)
+      this.levelList = matched
+        .filter(item => item.meta)
+        .map(item => Object.assign({}, item, {
+          name: this.resolveRouteName(item)
+        }))
+    },
+    resolveRouteName(route) {
+      if (route.path === '/index') {
+        return '系统首页'
+      }
+      const tableName = String(route.path || '').replace(/^\//, '')
+      const menuName = this.getRoleMenuName(tableName)
+      return menuName || route.name
+    },
+    getRoleMenuName(tableName) {
+      if (!tableName) {
+        return ''
+      }
+      const role = storage.get('role') || '管理员'
+      const menus = menu.list()
+      for (let i = 0; i < menus.length; i++) {
+        if (menus[i].roleName !== role || !menus[i].backMenu) {
+          continue
+        }
+        for (let j = 0; j < menus[i].backMenu.length; j++) {
+          const children = menus[i].backMenu[j].child || []
+          for (let k = 0; k < children.length; k++) {
+            if (children[k].tableName === tableName) {
+              return children[k].menu
+            }
+          }
+        }
+      }
+      return ''
     },
     isDashboard(route) {
       const name = route && route.name

@@ -31,7 +31,7 @@
 
 				<el-row :style='{"width":"170px","margin":"10px 0 0","flexDirection":"column","display":"flex"}'>
 						<el-button :style='{"border":"0","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#fff","borderRadius":"40px","background":"linear-gradient(135deg,#5fb98a,#86cc6a)","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','新增')" type="success" icon="el-icon-edit-outline" @click="addOrUpdateHandler()">提交报修</el-button>
-						<el-button :style='{"border":"2px solid #5fb98a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#3f8d67","borderRadius":"40px","background":"#f6fff8","width":"160px","fontSize":"14px","height":"40px"}' v-if="$storage.get('sessionTable') !== 'xuesheng'" type="success" icon="el-icon-download" @click="$exportTable('weixiuxinxi')">导出Excel</el-button>
+						<el-button :style='{"border":"2px solid #5fb98a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#3f8d67","borderRadius":"40px","background":"#f6fff8","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','查看')" type="success" icon="el-icon-download" @click="$exportTable('weixiuxinxi')">导出Excel</el-button>
 						<el-button :style='{"border":"2px solid #e0b64a","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#9c7427","borderRadius":"40px","background":"#fffaf0","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','新增') && $storage.get('sessionTable') !== 'xuesheng'" type="warning" icon="el-icon-upload2" @click="$importTable('weixiuxinxi', getDataList)">导入Excel</el-button>
 						<el-button :style='{"border":"2px solid #4e6ae2","cursor":"pointer","padding":"0 24px","margin":"0 10px 5px 0","outline":"none","color":"#4e6ae2","borderRadius":"40px","background":"#fff","width":"160px","fontSize":"14px","height":"40px"}' v-if="isAuth('weixiuxinxi','删除')" :disabled="dataListSelections.length <= 0" type="danger" @click="deleteHandler()">删除</el-button>
 
@@ -286,6 +286,9 @@ export default {
     search() {
       this.pageIndex = 1;
       this.getDataList();
+    },
+    sfshChange() {
+      this.search();
     },
 
     // 获取数据列表

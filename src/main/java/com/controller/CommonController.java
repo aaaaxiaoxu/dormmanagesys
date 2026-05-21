@@ -126,12 +126,6 @@ public class CommonController{
 	 */
 	@RequestMapping("/export/{tableName}")
 	public void exportTable(@PathVariable("tableName") String tableName, HttpServletRequest request, HttpServletResponse response) throws IOException {
-		if("xuesheng".equals(String.valueOf(request.getSession().getAttribute("tableName")))) {
-			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-			response.setContentType("application/json;charset=UTF-8");
-			response.getWriter().write("{\"code\":403,\"msg\":\"学生端不支持导出Excel\"}");
-			return;
-		}
 		ExportDefinition definition = EXPORT_DEFINITIONS.get(tableName);
 		if(definition == null) {
 			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -140,6 +134,19 @@ public class CommonController{
 			return;
 		}
 		Map<String, Object> params = new HashMap<String, Object>();
+		String sessionTable = String.valueOf(request.getSession().getAttribute("tableName"));
+		if("xuesheng".equals(sessionTable)) {
+			String username = String.valueOf(request.getSession().getAttribute("username"));
+			String whereClause = buildStudentExportWhere(tableName);
+			if(StringUtils.isBlank(whereClause)) {
+				response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+				response.setContentType("application/json;charset=UTF-8");
+				response.getWriter().write("{\"code\":403,\"msg\":\"学生端不支持导出该表\"}");
+				return;
+			}
+			params.put("username", username);
+			params.put("whereClause", whereClause);
+		}
 		params.put("table", tableName);
 		params.put("columns", StringUtils.join(definition.columns, ","));
 		List<Map<String, Object>> rows = commonService.selectExportRows(params);
@@ -149,6 +156,30 @@ public class CommonController{
 		response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + filename);
 		workbook.write(response.getOutputStream());
 		response.flushBuffer();
+	}
+
+	private String buildStudentExportWhere(String tableName) {
+		if("xuesheng".equals(tableName)
+				|| "shuidianfei".equals(tableName)
+				|| "qingjia".equals(tableName)
+				|| "churusushe".equals(tableName)
+				|| "weixiuxinxi".equals(tableName)
+				|| "kaoqinxinxi".equals(tableName)) {
+			return "xueshengxuehao = #{username}";
+		}
+		if("sushefenpei".equals(tableName)) {
+			return "EXISTS (SELECT 1 FROM sushefenpei mine WHERE mine.xueshengxuehao = #{username}"
+					+ " AND mine.sushemingcheng = sushefenpei.sushemingcheng"
+					+ " AND mine.susheloudong = sushefenpei.susheloudong"
+					+ " AND mine.fangjianhao = sushefenpei.fangjianhao)";
+		}
+		if("weishengxinxi".equals(tableName)) {
+			return "EXISTS (SELECT 1 FROM sushefenpei mine WHERE mine.xueshengxuehao = #{username}"
+					+ " AND mine.sushemingcheng = weishengxinxi.sushemingcheng"
+					+ " AND mine.susheloudong = weishengxinxi.susheloudong"
+					+ " AND mine.fangjianhao = weishengxinxi.fangjianhao)";
+		}
+		return "";
 	}
 
 	private HSSFWorkbook buildWorkbook(ExportDefinition definition, List<Map<String, Object>> rows) {
@@ -203,24 +234,32 @@ public class CommonController{
 				return R.error("Excel没有可导入的数据");
 			}
 			DataFormatter formatter = new DataFormatter();
+			List<Integer> importColumnIndexes = resolveImportColumnIndexes(sheet.getRow(0), definition, formatter);
 			int imported = 0;
+			int failed = 0;
+			int skipped = 0;
+			List<String> errorMessages = new ArrayList<String>();
 			for(int i = 1; i <= sheet.getLastRowNum(); i++) {
 				Row row = sheet.getRow(i);
 				if(row == null) {
+					skipped++;
 					continue;
 				}
 				List<String> columns = new ArrayList<String>();
 				List<Object> values = new ArrayList<Object>();
 				boolean hasValue = false;
+				columns.add("id");
+				values.add(generateImportId(i));
 				for(int j = 0; j < definition.columns.length; j++) {
 					columns.add(definition.columns[j]);
-					String value = getImportCellValue(row, j, formatter);
+					String value = getImportCellValue(row, importColumnIndexes.get(j), formatter);
 					if(StringUtils.isNotBlank(value)) {
 						hasValue = true;
 					}
 					values.add(StringUtils.isBlank(value) ? null : value);
 				}
 				if(!hasValue) {
+					skipped++;
 					continue;
 				}
 				for(Entry<String, String> entry : definition.importDefaults.entrySet()) {
@@ -233,13 +272,67 @@ public class CommonController{
 				params.put("table", tableName);
 				params.put("columns", StringUtils.join(columns, ","));
 				params.put("values", values);
-				commonService.insertImportRow(params);
-				imported++;
+				try {
+					commonService.insertImportRow(params);
+					imported++;
+				} catch (Exception e) {
+					failed++;
+					if(errorMessages.size() < 3) {
+						errorMessages.add("第" + (i + 1) + "行：" + getImportErrorMessage(e));
+					}
+				}
 			}
-			return R.ok().put("count", imported);
+			if(imported == 0 && failed > 0) {
+				return R.error("导入失败，" + StringUtils.join(errorMessages, "；"));
+			}
+			String message = failed > 0
+					? "导入完成，成功" + imported + "条，失败" + failed + "条：" + StringUtils.join(errorMessages, "；")
+					: "导入成功，共" + imported + "条";
+			return R.ok(message).put("count", imported).put("failed", failed).put("skipped", skipped);
 		} finally {
 			inputStream.close();
 		}
+	}
+
+	private List<Integer> resolveImportColumnIndexes(Row header, ExportDefinition definition, DataFormatter formatter) {
+		Map<String, Integer> headerIndexes = new HashMap<String, Integer>();
+		if(header != null && header.getLastCellNum() > 0) {
+			for(int i = 0; i < header.getLastCellNum(); i++) {
+				String headerName = normalizeImportHeader(getImportCellValue(header, i, formatter));
+				if(StringUtils.isNotBlank(headerName) && !headerIndexes.containsKey(headerName)) {
+					headerIndexes.put(headerName, i);
+				}
+			}
+		}
+		List<Integer> indexes = new ArrayList<Integer>();
+		for(int i = 0; i < definition.columns.length; i++) {
+			Integer headerIndex = headerIndexes.get(normalizeImportHeader(definition.labels[i]));
+			if(headerIndex == null) {
+				headerIndex = headerIndexes.get(normalizeImportHeader(definition.columns[i]));
+			}
+			indexes.add(headerIndex == null ? i : headerIndex);
+		}
+		return indexes;
+	}
+
+	private String normalizeImportHeader(String header) {
+		return StringUtils.defaultString(header).replaceAll("\\s+", "").trim();
+	}
+
+	private Long generateImportId(int rowNumber) {
+		return new Date().getTime() * 1000 + rowNumber;
+	}
+
+	private String getImportErrorMessage(Exception e) {
+		Throwable cause = e;
+		while(cause.getCause() != null && cause.getCause() != cause) {
+			cause = cause.getCause();
+		}
+		String message = StringUtils.defaultIfBlank(cause.getMessage(), e.getMessage());
+		if(StringUtils.contains(message, "Duplicate entry")) {
+			return "存在重复数据，请检查唯一字段";
+		}
+		return StringUtils.abbreviate(StringUtils.defaultIfBlank(message, "数据格式不符合要求"), 120);
 	}
 
 	private String getImportCellValue(Row row, int columnIndex, DataFormatter formatter) {

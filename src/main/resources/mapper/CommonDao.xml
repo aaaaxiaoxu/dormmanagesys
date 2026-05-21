@@ -70,7 +70,11 @@
         </select>
 
 		<select id="selectExportRows" resultType="map" >
-			SELECT ${columns} FROM ${table} ORDER BY id DESC LIMIT 5000
+			SELECT ${columns} FROM ${table}
+			<if test = "whereClause != null and whereClause != ''">
+				WHERE ${whereClause}
+			</if>
+			ORDER BY id DESC LIMIT 5000
 		</select>
 
 		<insert id="insertImportRow">

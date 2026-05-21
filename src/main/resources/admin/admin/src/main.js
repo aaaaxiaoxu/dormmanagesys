@@ -63,6 +63,22 @@ Vue.prototype.isAuth = isAuth
 Vue.prototype.getCurDateTime = getCurDateTime
 Vue.prototype.getCurDate = getCurDate
 Vue.prototype.$exportTable = function(tableName) {
+  const showExportError = (blob, fallback) => {
+    if (blob instanceof Blob) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          this.$message.error((data && data.msg) || fallback);
+        } catch (e) {
+          this.$message.error(fallback);
+        }
+      };
+      reader.readAsText(blob);
+      return;
+    }
+    this.$message.error(fallback);
+  };
   http({
     url: `export/${tableName}`,
     method: 'get',
@@ -70,6 +86,10 @@ Vue.prototype.$exportTable = function(tableName) {
   }).then(res => {
     const contentType = res.headers['content-type'] || 'application/vnd.ms-excel';
     const blob = new Blob([res.data], { type: contentType });
+    if (contentType.indexOf('application/json') !== -1) {
+      showExportError(blob, '导出失败');
+      return;
+    }
     const disposition = res.headers['content-disposition'] || '';
     const match = disposition.match(/filename\*=UTF-8''([^;]+)/);
     const filename = match ? decodeURIComponent(match[1]) : `${tableName}.xls`;
@@ -81,8 +101,8 @@ Vue.prototype.$exportTable = function(tableName) {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(link.href);
     this.$message.success('导出成功');
-  }).catch(() => {
-    this.$message.error('导出失败');
+  }).catch(error => {
+    showExportError(error && error.response && error.response.data, '导出失败');
   });
 }
 Vue.prototype.$importTable = function(tableName, onSuccess) {
@@ -105,7 +125,7 @@ Vue.prototype.$importTable = function(tableName, onSuccess) {
       data: formData
     }).then(({ data }) => {
       if (data && data.code === 0) {
-        this.$message.success(`导入成功，共${data.count || 0}条`);
+        this.$message.success(data.msg || `导入成功，共${data.count || 0}条`);
         if (typeof onSuccess === 'function') {
           onSuccess.call(this);
         }
